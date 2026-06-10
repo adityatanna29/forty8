@@ -42,16 +42,24 @@ class OrderedLogit:
         out = np.stack([p_w, p_d, p_l], axis=1)
         return out / out.sum(axis=1, keepdims=True)
 
-    def fit(self, dr: np.ndarray, home: np.ndarray, outcome: np.ndarray) -> "OrderedLogit":
-        """outcome: 0 = home win, 1 = draw, 2 = home loss."""
+    def fit(self, dr: np.ndarray, home: np.ndarray, outcome: np.ndarray,
+            sample_weight: np.ndarray | None = None) -> "OrderedLogit":
+        """outcome: 0 = home win, 1 = draw, 2 = home loss.
+
+        sample_weight: optional per-match weights — use to emphasize
+        tournament-grade matches so the head matches WC conditions
+        (iteration-5 fix: friendlies were polluting the fit).
+        """
         dr = np.asarray(dr, float); home = np.asarray(home, float)
         y = np.asarray(outcome, int)
+        w = np.ones(len(y)) if sample_weight is None else np.asarray(sample_weight, float)
+        w = w / w.mean()
 
         def nll(theta: np.ndarray) -> float:
             beta, ha, c1, gap = theta
             m = OrderedLogit(beta=beta, ha=ha, c1=c1, c2=c1 + abs(gap) + 1e-6)
             p = m.predict(dr, home)
-            return -float(np.mean(np.log(p[np.arange(len(y)), y] + _EPS)))
+            return -float(np.mean(w * np.log(p[np.arange(len(y)), y] + _EPS)))
 
         x0 = np.array([self.beta, self.ha, self.c1, self.c2 - self.c1])
         res = minimize(nll, x0, method="L-BFGS-B")

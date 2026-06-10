@@ -38,7 +38,7 @@ from wc26.features import build_features
 from wc26.market.consensus import consensus_probs
 from wc26.market.inverse_sim import bt_match_probs, invert_outrights
 from wc26.models.ordered_logit import OrderedLogit
-from wc26.models.poisson import PoissonParams, fit_poisson
+from wc26.models.poisson import PoissonModel, PoissonParams, fit_poisson
 from wc26.models.pool import apply_temperature, fit_pool_weights, fit_temperature, log_pool
 from wc26.ratings.elo import EloParams, run_elo
 from wc26.ratings.pi import run_pi
@@ -90,7 +90,11 @@ def predict_2026(matches: pd.DataFrame, cfg: dict, static: Path, processed: Path
     dr = feats["elo_diff"].to_numpy()
     home = feats["home"].to_numpy()
 
-    ol = OrderedLogit().fit(dr[is_train], home[is_train], y[is_train])
+    tier_w = feats["tier"].map(
+        {"wc_finals": 4.0, "continental_finals": 3.0, "qualifier": 2.0,
+         "tournament": 1.5, "friendly": 1.0}).fillna(1.0).to_numpy()
+    ol = OrderedLogit().fit(dr[is_train], home[is_train], y[is_train],
+                            sample_weight=tier_w[is_train])
     p_cfg = cfg["poisson"]
     pois = fit_poisson(
         matches, as_of=as_of,
@@ -98,6 +102,14 @@ def predict_2026(matches: pd.DataFrame, cfg: dict, static: Path, processed: Path
                              confed_shrink=p_cfg["confed_shrink"], max_goals=p_cfg["max_goals"]),
         confed_of=confed_of,
     )
+    from wc26.ratings.confed import apply_shifts, fit_confed_shifts, shifts_in_elo_points
+
+    confed_shifts = fit_confed_shifts(matches, pois, confed_of, as_of)
+    pois = apply_shifts(pois, confed_shifts, confed_of)
+    elo_pts = shifts_in_elo_points(confed_shifts)
+
+    def adj_elo(team: str) -> float:
+        return elo.ratings[team] + elo_pts.get(confed_of.get(team, ""), 0.0)
 
     # pool weights/temperature from validation window (ratings + poisson heads)
     rows_val = feats[is_val]
@@ -118,6 +130,12 @@ def predict_2026(matches: pd.DataFrame, cfg: dict, static: Path, processed: Path
         target = consensus_probs(odds, method=cfg["market"]["devig_method"])
         bt = invert_outrights(target, groups, seed=int(cfg["seed"]))
 
+    # optional neural head (exported by `python -m wc26.neural.evaluate --export-2026`)
+    neural_head: dict[str, list[float]] = {}
+    neural_path = REPO_ROOT / cfg["paths"]["processed"] / "neural_head_2026.json"
+    if neural_path.exists():
+        neural_head = json.loads(neural_path.read_text())
+
     # ratings snapshot per team
     ratings_out = {}
     for g, teams in groups.items():
@@ -136,7 +154,7 @@ def predict_2026(matches: pd.DataFrame, cfg: dict, static: Path, processed: Path
         for a, b in itertools.combinations(teams, 2):
             neutral = a not in hosts and b not in hosts
             home_t, away_t = (a, b) if (a in hosts or neutral) else (b, a)
-            dr_m = elo.ratings[home_t] - elo.ratings[away_t]
+            dr_m = adj_elo(home_t) - adj_elo(away_t)
             heads = {
                 "ratings": ol.predict(np.array([dr_m]), np.array([0.0 if neutral else 1.0]))[0],
                 "poisson": pois.outcome_probs(home_t, away_t, neutral=neutral)
@@ -144,6 +162,9 @@ def predict_2026(matches: pd.DataFrame, cfg: dict, static: Path, processed: Path
             }
             if bt is not None:
                 heads["market"] = bt_match_probs(float(bt[home_t]), float(bt[away_t]))
+            nk = neural_head.get(f"{home_t}|{away_t}")
+            if nk is not None:
+                heads["neural"] = np.asarray(nk, dtype=float)
             used = [h for h in heads.values() if h is not None]
             if len(used) >= 2:
                 # extend fitted 2-head weights with equal share for market head
@@ -168,6 +189,7 @@ def predict_2026(matches: pd.DataFrame, cfg: dict, static: Path, processed: Path
 
     return {
         "as_of": str(as_of.date()),
+        "confed_shifts": confed_shifts,
         "pool": {"weights": list(map(float, w)), "temperature": float(temp)},
         "elo_params": asdict(elo_params),
         "ratings": ratings_out,
@@ -198,18 +220,50 @@ def simulate_2026(matches: pd.DataFrame, cfg: dict, static: Path,
     missing = [t for t in teams if t not in pois.index]
     if missing:
         raise ValueError(f"teams missing from goal model: {missing}")
-    cdf, cdf_et = build_score_cdfs(pois, teams, hosts=set(gdata["hosts"]))
+
+    # iteration-5: cross-confederation calibration on inter-confederation
+    # matches (fixes CONMEBOL inflation / UEFA deflation in results-only fits)
+    from wc26.ratings.confed import apply_shifts, fit_confed_shifts
+
+    confed_shifts = fit_confed_shifts(matches, pois, confed_of, KICKOFF)
+    pois = apply_shifts(pois, confed_shifts, confed_of)
+
+    hosts = set(gdata["hosts"])
+    cdf, cdf_et = build_score_cdfs(pois, teams, hosts=hosts)
     group_index = np.array([[teams.index(t) for t in groups[g]] for g in "ABCDEFGHIJKL"])
     fixtures = [(teams.index(x), teams.index(y))
                 for g in "ABCDEFGHIJKL" for x, y in _it.combinations(groups[g], 2)]
     bracket = load_bracket(static)
     elo = run_elo(matches, load_elo_params(REPO_ROOT / cfg["paths"]["processed"], cfg))
     elo_arr = np.array([elo.ratings.get(t, 1500.0) for t in teams])
+
+    # parameter-uncertainty propagation: strength noise per chunk from RD
+    # (rd Elo points -> goal-log scale via the same elasticity as confed.py)
+    rd_arr = np.array([elo.rd.get(t, 200.0) for t in teams])
+    strength_sd = rd_arr * (0.65 / 400.0) * 0.5
+
+    def cdf_builder(shifts: np.ndarray):
+        m2 = PoissonModel(teams=list(pois.teams), att=pois.att.copy(), def_=pois.def_.copy(),
+                          mu=pois.mu, ha=pois.ha, rho=pois.rho, params=pois.params)
+        for i, t in enumerate(teams):
+            j = m2.index[t]
+            m2.att[j] += shifts[i]
+            m2.def_[j] += shifts[i]
+        return build_score_cdfs(m2, teams, hosts=hosts)
+
+    # shootout skill: fitted on real shootouts.csv if available, else coin flip
+    kappa = 0.0
+    so_path = REPO_ROOT / cfg["paths"]["processed"] / "shootout_fit.json"
+    if so_path.exists():
+        kappa = float(json.loads(so_path.read_text()).get("recommended_kappa", 0.0))
+
     res = run_tournament(teams, group_index, fixtures, bracket, cdf, cdf_et,
                          n_sims=n_sims, seed=seed if seed is not None else int(cfg["seed"]),
-                         elo=elo_arr, kappa=0.0)
+                         elo=elo_arr, kappa=kappa,
+                         strength_sd=strength_sd, cdf_builder=cdf_builder)
     return {
         "n_sims": res.n_sims,
+        "confed_shifts": confed_shifts,
         "bracket_is_template": bracket.template,
         "allocation_fallbacks": res.allocation_fallbacks,
         "teams": {

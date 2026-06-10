@@ -95,7 +95,15 @@ def run_tournament(
     seed: int = 26,
     elo: np.ndarray | None = None,
     kappa: float = 0.0,
+    strength_sd: np.ndarray | None = None,
+    cdf_builder=None,
 ) -> SimResult:
+    """strength_sd + cdf_builder enable parameter-uncertainty propagation:
+    per chunk, team strengths are perturbed ~N(0, strength_sd) (goal-log
+    scale, e.g. derived from the Elo RD feature) and the scoreline CDFs are
+    rebuilt via cdf_builder(shifts) -> (cdf, cdf_et). The chunk-to-chunk
+    spread then yields honest credible intervals instead of pure MC noise.
+    """
     rng = np.random.default_rng(seed)
     t = len(teams)
     reach_counts = {r: np.zeros(t) for r in ROUNDS}
@@ -107,6 +115,9 @@ def run_tournament(
     done = 0
     while done < n_sims:
         n = min(chunk, n_sims - done)
+        if strength_sd is not None and cdf_builder is not None:
+            chunk_shifts = rng.normal(0.0, strength_sd)
+            cdf, cdf_et = cdf_builder(chunk_shifts)
         pts, gd, gf = play_groups(cdf, fixtures, n, rng)
         winners, runners, thirds, third_key = rank_groups(pts, gd, gf, group_index, rng)
         q_groups = best_thirds(third_key, rng)            # (n, 8) group ids

@@ -29,6 +29,10 @@ from wc26.ratings.elo import EloParams, run_elo
 from wc26.ratings.pi import run_pi
 
 
+TIER_WEIGHTS = {"wc_finals": 4.0, "continental_finals": 3.0, "qualifier": 2.0,
+                "tournament": 1.5, "friendly": 1.0}
+
+
 @dataclass
 class TournamentWindow:
     name: str               # report label, e.g. "WC 2022"
@@ -69,18 +73,29 @@ def backtest_tournament(
 
     val_start = window.start - pd.Timedelta(days=int(val_years * 365.25))
     is_val = ((feats["date"] >= val_start) & (feats["date"] < window.start)).to_numpy()
+    # iteration-5: validate under tournament-like conditions (no friendlies),
+    # since pool weights/temperature transfer to neutral competitive matches
+    is_val &= (feats["tier"] != "friendly").to_numpy()
     is_train = (feats["date"] < val_start).to_numpy()
 
     y = feats["outcome"].to_numpy()
     dr = feats["elo_diff"].to_numpy()
     home = feats["home"].to_numpy()
 
-    # --- heads ---
-    ol = OrderedLogit().fit(dr[is_train], home[is_train], y[is_train])
+    # --- heads (tier-weighted: tournament matches count more) ---
+    tier_w = feats["tier"].map(TIER_WEIGHTS).fillna(1.0).to_numpy()
+    ol = OrderedLogit().fit(dr[is_train], home[is_train], y[is_train],
+                            sample_weight=tier_w[is_train])
     ratings_head_val = ol.predict(dr[is_val], home[is_val])
     ratings_head_test = ol.predict(dr[is_test], home[is_test])
 
     pois = fit_poisson(matches, as_of=window.start, params=poisson_params, confed_of=confed_of)
+    confed_shifts = None
+    if confed_of:
+        from wc26.ratings.confed import apply_shifts, fit_confed_shifts
+
+        confed_shifts = fit_confed_shifts(matches, pois, confed_of, window.start)
+        pois = apply_shifts(pois, confed_shifts, confed_of)
     pois_val = _poisson_probs(pois, feats[is_val], ratings_head_val)
     pois_test = _poisson_probs(pois, feats[is_test], ratings_head_test)
 
@@ -97,6 +112,7 @@ def backtest_tournament(
         "tournament": window.name,
         "n_matches": int(is_test.sum()),
         "pool_weights": {"ratings": float(w[0]), "poisson": float(w[1])},
+        "confed_shifts": confed_shifts,
         "temperature": float(t),
         "model": {
             "log_loss": log_loss(pooled_test, y_test),

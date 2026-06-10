@@ -188,6 +188,27 @@ tests/                        45 tests incl. ground-truth integration + e2e
 | Hybrid GBM on covariates | Groll et al. 2019 | `models/hybrid.py` |
 | 48-team format, thirds, tiebreakers | FIFA 2026 regulations | `sim/*` |
 
+## Research track (GPU / "a lot of compute")
+
+The repo now carries a falsifiable research program — *do shared-parameter
+sequence encoders implicitly solve cross-confederation anchoring?* — with
+`wc26/neural/` (Forty8Net transformer over match histories, training +
+stratified eval + 2026 head export), `wc26/baselines/whr.py` (Whole-History
+Rating, the honest smoothing baseline), `wc26/models/shootout.py` (shootout
+skill fit on real shootouts.csv), and the E1–E5 experiment grid. Read
+`docs/RESEARCH_PROGRAM.md` (what to train and claim) and
+`docs/LITERATURE_SURVEY.md` (full citation base). Install: `pip install -e
+".[dev,neural]"`. Quick start on GPU:
+
+```bash
+python -m wc26.models.shootout                       # closes the 50/50 TODO
+python -m wc26.neural.train --seeds 5                # main model
+python -m wc26.neural.train --seeds 5 --no-elo       # Elo-free ablation
+python -m wc26.neural.evaluate --ckpt runs/neural/<tag>/best_seed0.pt --export-2026
+python -m wc26.neural.anchoring                      # headline E1 figure
+python -m wc26.pipeline --simulate                   # ensemble now pools the neural head
+```
+
 ## Honest limitations
 
 - **Bracket is a template** until you complete step 6 — the single remaining

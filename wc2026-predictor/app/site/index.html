@@ -5,79 +5,239 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#0d1117">
 <title>Forty8 — World Cup 2026 forecasts</title>
-<meta name="description" content="Open, calibrated World Cup 2026 match and title probabilities from 100,000 simulations, updated after every matchday. Open source. Not betting advice.">
+<meta name="description" content="Open, calibrated World Cup 2026 probabilities from 100,000 simulations — updated after every matchday. Open source. Not betting advice.">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <meta property="og:title" content="Forty8 — World Cup 2026 forecasts">
-<meta property="og:description" content="Open, calibrated probabilities from 100,000 simulations, updated after every matchday.">
+<meta property="og:description" content="Who wins the 2026 World Cup? 100,000 simulations, updated daily.">
 <meta property="og:image" content="assets/og-card.png">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
 <style>
-:root{--bg:#0d1117;--card:#161b22;--text:#e6edf3;--dim:#8b949e;--accent:#3fb950;--bar:#1f6feb;--line:#21262d}
+:root{
+  --bg:#0d1117; --s1:#141b24; --s2:#1b2430;
+  --border:rgba(255,255,255,.07); --border-top:rgba(255,255,255,.12);
+  --t1:#e8edf4; --t2:#9aa7b5; --t3:#5d6b7a;
+  --blue:#4d9fff; --green:#3fd68f; --red:#f0635a; --gold:#e8c468;
+}
 *{box-sizing:border-box;margin:0}
-body{background:var(--bg);color:var(--text);font:15px/1.5 system-ui,sans-serif;padding:24px;max-width:1100px;margin:auto}
-header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:6px}
-header img{height:44px}
-header nav{margin-left:auto;display:flex;gap:16px}
-a{color:#58a6ff;text-decoration:none} a:hover{text-decoration:underline}
-h1{font-size:22px} h2{font-size:17px;margin:26px 0 10px}
-.dim{color:var(--dim);font-size:13px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;margin-top:12px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px}
-.row{display:flex;justify-content:space-between;align-items:center;padding:2px 0;font-size:14px}
-.bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin:2px 0 8px}
-.bar>div{height:100%;background:var(--bar)}
-.match{font-size:13px;padding:6px 0;border-top:1px solid var(--line)}
-.probs{display:flex;gap:4px;margin-top:3px}
-.probs span{flex-basis:0;flex-grow:1;text-align:center;background:var(--line);border-radius:3px;padding:1px 0;font-size:12px}
-.probs .w{background:#1f6feb33}.probs .l{background:#f8514933}
-table{width:100%;border-collapse:collapse;font-size:14px}
-td,th{padding:6px 8px;text-align:left;border-bottom:1px solid var(--line)}
-td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
-tbody tr.team{cursor:pointer} tbody tr.team:hover{background:#1f242c}
-tr.detail td{background:#10151c}
-.rounds{display:flex;gap:6px;align-items:flex-end;height:64px;padding:6px 0}
-.rounds div{flex:1;background:var(--bar);border-radius:3px 3px 0 0;min-height:2px;position:relative}
-.rounds div:last-child{background:var(--accent)}
-.rounds span{position:absolute;top:100%;left:0;right:0;text-align:center;font-size:10px;color:var(--dim)}
-.warn{color:#d29922;font-size:13px;margin-top:6px}
-footer{margin-top:40px;padding-top:14px;border-top:1px solid var(--line);font-size:12.5px;color:var(--dim)}
-@media(max-width:600px){body{padding:14px}header nav{margin-left:0}}
+html{scroll-behavior:smooth}
+body{
+  color:var(--t1); font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  background:
+    radial-gradient(900px 520px at 82% -10%, rgba(77,159,255,.08), transparent 60%),
+    radial-gradient(700px 520px at 8% 28%, rgba(63,214,143,.05), transparent 60%),
+    var(--bg);
+  min-height:100vh;
+}
+a{color:var(--blue);text-decoration:none} a:hover{text-decoration:underline}
+.wrap{max-width:1080px;margin:auto;padding:0 20px}
+.num{font-variant-numeric:tabular-nums}
+
+/* header */
+header{
+  position:sticky;top:0;z-index:50;
+  background:rgba(13,17,23,.72);
+  backdrop-filter:blur(12px) saturate(1.4);-webkit-backdrop-filter:blur(12px) saturate(1.4);
+  border-bottom:1px solid var(--border);
+}
+.hrow{display:flex;align-items:center;gap:16px;padding:10px 20px;max-width:1080px;margin:auto}
+.hrow img{height:36px}
+nav{margin-left:auto;display:flex;gap:18px;font-size:13.5px}
+nav a{color:var(--t2)} nav a:hover{color:var(--t1);text-decoration:none}
+
+/* hero */
+.hero{padding:56px 0 28px;text-align:left}
+.hero h1{font-size:clamp(26px,4.6vw,42px);font-weight:800;letter-spacing:-.02em;line-height:1.12}
+.hero h1 em{font-style:normal;color:var(--green)}
+.meta{color:var(--t3);font-size:13px;margin-top:10px}
+.warnbar{margin-top:14px;font-size:13px;color:var(--gold)}
+
+/* spotlight trio */
+.trio{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:28px}
+.spot{
+  background:var(--s1);border:1px solid var(--border);border-top:1px solid var(--border-top);
+  border-radius:12px;padding:18px 18px 14px;position:relative;overflow:hidden;
+}
+.spot.first::before{content:"";position:absolute;inset:-40% -20% auto;height:120%;
+  background:radial-gradient(closest-side, rgba(232,196,104,.10), transparent 70%);pointer-events:none}
+.spot .rank{font-size:11px;letter-spacing:2px;color:var(--t3)}
+.spot .team{font-size:18px;font-weight:700;margin-top:2px}
+.spot .big{font-size:clamp(30px,4.5vw,44px);font-weight:800;letter-spacing:-.02em;margin-top:6px}
+.spot .ci{font-size:12px;color:var(--t3)}
+.spot.first .big{color:var(--gold)}
+
+/* simulate */
+.simbox{margin-top:26px;display:flex;flex-wrap:wrap;align-items:center;gap:14px}
+button.sim{
+  font:600 14.5px system-ui;color:#08110b;background:var(--green);
+  border:0;border-radius:10px;padding:11px 18px;cursor:pointer;
+}
+button.sim:hover{filter:brightness(1.08)} button.sim:active{transform:translateY(1px)}
+button.sim:disabled{opacity:.55;cursor:wait}
+#simout{font-size:14px;color:var(--t2);min-height:22px}
+#simout .champ{color:var(--gold);font-weight:700}
+#simout .step{color:var(--t3)}
+
+/* sections */
+h2{font-size:17px;font-weight:700;margin:42px 0 4px}
+.sub{color:var(--t3);font-size:13px;margin-bottom:14px}
+section{content-visibility:auto;contain-intrinsic-size:auto 600px}
+
+/* leaderboard */
+.lb{display:flex;flex-direction:column;gap:8px}
+.lbrow{display:grid;grid-template-columns:26px 150px 1fr 64px;align-items:center;gap:10px;
+  padding:7px 10px;border-radius:9px;transition:background .15s}
+.lbrow:hover{background:rgba(255,255,255,.04)}
+.lbrow .r{color:var(--t3);font-size:12.5px}
+.lbrow .t{font-weight:600;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.track{height:12px;background:rgba(255,255,255,.05);border-radius:6px;overflow:hidden}
+.fill{height:100%;width:0;border-radius:6px;
+  background:linear-gradient(90deg, color-mix(in oklab, var(--blue) 75%, transparent), var(--green))}
+.lbrow.first .fill{background:linear-gradient(90deg, var(--green), var(--gold))}
+.lbrow .p{font-weight:700;font-size:14px;text-align:right}
+@media (prefers-reduced-motion: no-preference){
+  .fill{transition:width .9s cubic-bezier(.2,.8,.2,1)}
+}
+.in .fill{width:var(--w)}
+
+/* heatmap forecast table */
+.tablecard{background:var(--s1);border:1px solid var(--border);border-top:1px solid var(--border-top);
+  border-radius:12px;overflow:auto}
+table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:680px}
+th,td{padding:8px 10px;text-align:right;border-bottom:1px solid rgba(255,255,255,.05)}
+th{color:var(--t3);font-weight:600;font-size:12px;cursor:pointer;user-select:none;position:sticky;top:0;background:var(--s1)}
+th:hover{color:var(--t1)}
+th.sorted{color:var(--green)}
+td:first-child,th:first-child{text-align:left;position:sticky;left:0;background:var(--s1)}
+tbody tr{cursor:pointer}
+tbody tr:hover td{background:rgba(255,255,255,.035)}
+td.pc{background:color-mix(in oklab, var(--green) calc(var(--p)*0.85%), transparent)}
+td.team{font-weight:600;white-space:nowrap}
+td.grp{color:var(--t3)}
+tr.frow td{background:var(--s2);cursor:default}
+.funnel{display:flex;gap:6px;align-items:flex-end;padding:10px 4px 18px}
+.funnel .st{flex:1;text-align:center}
+.funnel .bar{background:linear-gradient(180deg,var(--blue),color-mix(in oklab,var(--blue) 40%,transparent));
+  border-radius:5px 5px 0 0;margin:0 auto;width:70%}
+.funnel .st:last-child .bar{background:linear-gradient(180deg,var(--gold),color-mix(in oklab,var(--gold) 40%,transparent))}
+.funnel .lbl{font-size:10.5px;color:var(--t3);margin-top:5px}
+.funnel .val{font-size:12px;font-weight:700;margin-top:1px}
+
+/* groups */
+.ggrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+.gcard{background:var(--s1);border:1px solid var(--border);border-top:1px solid var(--border-top);
+  border-radius:12px;padding:14px;transition:border-color .2s}
+.gcard:hover{border-color:rgba(255,255,255,.16)}
+.gcard h3{font-size:13px;letter-spacing:1.5px;color:var(--t3);margin-bottom:10px}
+.grow{display:grid;grid-template-columns:1fr 86px;align-items:center;gap:8px;
+  padding:5px 8px;border-left:3px solid transparent;border-radius:0 6px 6px 0;margin-bottom:2px}
+.grow.q1{border-left-color:var(--green)}
+.grow.q3{border-left-color:var(--blue)}
+.grow .nm{font-weight:600;font-size:14px}
+.grow .ad{font-size:12px;color:var(--t2);text-align:right}
+.fx{margin-top:12px;border-top:1px solid var(--border);padding-top:10px}
+.fxrow{margin-bottom:10px}
+.fxteams{display:flex;justify-content:space-between;font-size:12.5px;color:var(--t2);margin-bottom:3px}
+.wdl{display:flex;height:18px;border-radius:5px;overflow:hidden;font-size:11px;font-weight:700}
+.wdl span{display:flex;align-items:center;justify-content:center;min-width:0;color:#0a0f14}
+.wdl .w{background:color-mix(in oklab, var(--blue) 80%, white 6%)}
+.wdl .d{background:#39434f;color:var(--t2)}
+.wdl .l{background:color-mix(in oklab, var(--red) 70%, white 4%)}
+
+/* live + footer */
+#live .row{display:flex;justify-content:space-between;padding:4px 0;font-size:14px}
+.card{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:14px}
+footer{margin:56px 0 28px;padding-top:16px;border-top:1px solid var(--border);
+  font-size:12.5px;color:var(--t3)}
+footer p{margin-bottom:8px}
+
+@media(max-width:720px){.trio{grid-template-columns:1fr}.lbrow{grid-template-columns:22px 110px 1fr 56px}}
 </style>
 </head>
 <body>
 <header>
-  <img src="assets/logo.svg" alt="Forty8 — World Cup 2026 forecasts">
-  <nav><a href="about.html">Methodology</a><a href="data/advance_probs_2026.json">Data (JSON)</a></nav>
+  <div class="hrow">
+    <a href="#"><img src="assets/logo.svg" alt="Forty8 — World Cup 2026 forecasts"></a>
+    <nav>
+      <a href="#forecast">Forecast</a><a href="#groups">Groups</a>
+      <a href="about.html">Methodology</a><a href="data/advance_probs_2026.json">JSON</a>
+    </nav>
+  </div>
 </header>
-<p class="dim" id="meta">loading…</p>
-<div id="warn" role="alert"></div>
 
-<h2>Title odds <span class="dim">(click a team for round-by-round path)</span></h2>
-<div class="card"><table id="title" aria-label="Championship probabilities"><tbody></tbody></table></div>
+<main class="wrap">
+  <div class="hero">
+    <h1>Who wins the <em>2026 World Cup</em>?</h1>
+    <p class="meta num" id="meta">loading model output…</p>
+    <div class="warnbar" id="warn" role="alert"></div>
+    <div class="trio" id="trio"></div>
+    <div class="simbox">
+      <button class="sim" id="simbtn" disabled>▶ Simulate one tournament</button>
+      <div id="simout" aria-live="polite"></div>
+    </div>
+  </div>
 
-<h2>Live</h2>
-<div class="card" id="live"><span class="dim">No live data yet — appears automatically during match windows.</span></div>
+  <section id="leader">
+    <h2>Title odds</h2>
+    <p class="sub">Probability of winning the final on July 19 — top 12 of 48 teams.</p>
+    <div class="lb" id="lb"></div>
+  </section>
 
-<h2>Groups &amp; match probabilities</h2>
-<div class="grid" id="groups"></div>
+  <section id="forecast">
+    <h2>Full forecast</h2>
+    <p class="sub">Click a column to sort, click a team for its round-by-round path. Cell shading = probability.</p>
+    <div class="tablecard"><table id="ft" aria-label="advancement probabilities">
+      <thead></thead><tbody></tbody></table></div>
+  </section>
 
-<footer>
-  <p><strong>Forty8</strong> is an open-source statistical model. Probabilities are estimates, not promises,
-  and <strong>not betting advice</strong> — if you gamble, the market has already priced most of this in.</p>
-  <p>Match history: martj42 international results (CC0) · schedule: openfootball (public domain) ·
-  methodology &amp; honest limitations: <a href="about.html">about page</a> · code: MIT.
-  This site sets no cookies and runs no trackers.</p>
-  <p>Not affiliated with or endorsed by FIFA. "FIFA" and "FIFA World Cup" are trademarks of their owner;
-  used here only to identify the tournament being forecast.</p>
-</footer>
+  <section>
+    <h2>Live</h2>
+    <div class="card" id="live"><span class="sub">Appears automatically during match windows.</span></div>
+  </section>
+
+  <section id="groups">
+    <h2>Groups &amp; match probabilities</h2>
+    <p class="sub">Left edge: green = direct qualification pace, blue = third-place contention. Bars: home / draw / away.</p>
+    <div class="ggrid" id="gg"></div>
+  </section>
+
+  <footer>
+    <p><strong>Forty8</strong> is an open-source statistical model. Probabilities are estimates, not promises,
+    and <strong>not betting advice</strong>.</p>
+    <p>Data: martj42 international results (CC0) · openfootball schedule (public domain) ·
+    <a href="about.html">methodology &amp; limitations</a> · code MIT · no cookies, no trackers.</p>
+    <p>Not affiliated with or endorsed by FIFA. Tournament names are used only to identify the competition.</p>
+  </footer>
+</main>
 
 <script>
-const pct = x => (100 * x).toFixed(1) + "%";
-const ROUNDS = ["r32","r16","qf","sf","final","champion"];
-const RLBL = {r32:"R32",r16:"R16",qf:"QF",sf:"SF",final:"Final",champion:"🏆"};
+"use strict";
+const $ = s => document.querySelector(s);
+const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const fmt = p => p < 0.005 ? "<1%" : p > 0.995 ? ">99%" : Math.round(p * 100) + "%";
+const fmt1 = p => p < 0.0005 ? "<0.1%" : (100 * p).toFixed(1) + "%";
+const ROUNDS = [["r32","R32"],["r16","R16"],["qf","QF"],["sf","SF"],["final","Final"],["champion","🏆 Win"]];
 
-async function getJSON(p){ try{const r=await fetch(p);return r.ok?r.json():null}catch{return null} }
+async function getJSON(p){ try{const r = await fetch(p); return r.ok ? r.json() : null}catch{return null} }
+
+const io = new IntersectionObserver(es => {
+  for (const e of es) if (e.isIntersecting){ e.target.classList.add("in"); countUps(e.target); io.unobserve(e.target); }
+}, {threshold:.3});
+
+function countUps(root){
+  for (const el of root.querySelectorAll("[data-count]")){
+    const target = parseFloat(el.dataset.count);
+    if (REDUCED){ el.textContent = fmt1(target); continue; }
+    const t0 = performance.now(), dur = 700;
+    (function tick(t){
+      const k = Math.min(1,(t - t0)/dur), e = 1 - (1 - k) ** 3;
+      el.textContent = fmt1(target * e);
+      if (k < 1) requestAnimationFrame(tick);
+    })(t0);
+  }
+}
+
+let AP = null, MP = null;
 
 (async () => {
   const [mp, ap, live] = await Promise.all([
@@ -85,66 +245,156 @@ async function getJSON(p){ try{const r=await fetch(p);return r.ok?r.json():null}
     getJSON("data/advance_probs_2026.json"),
     getJSON("data/live.json"),
   ]);
-  if (!mp) { document.getElementById("meta").textContent = "Forecast data not generated yet — run the pipeline (see README)."; return; }
-  document.getElementById("meta").textContent =
-    `as of ${mp.as_of}` + (ap ? ` · ${ap.n_sims.toLocaleString()} tournament simulations` : "") +
-    ` · pool [${mp.pool.weights.map(w=>w.toFixed(2)).join(", ")}] · T=${mp.pool.temperature.toFixed(2)}`;
+  MP = mp; AP = ap;
+  if (!mp){ $("#meta").textContent = "Forecast data not generated yet — run the pipeline (README step 5)."; return; }
+  $("#meta").textContent = `Updated ${mp.as_of}` + (ap ? ` · ${ap.n_sims.toLocaleString()} simulated tournaments` : "") +
+    ` · ensemble T=${mp.pool.temperature.toFixed(2)}`;
   if (ap && ap.bracket_is_template)
-    document.getElementById("warn").innerHTML =
-      '<p class="warn">⚠ Bracket template in use — R32 pairings not yet verified against the official FIFA schedule. Advancement odds are indicative.</p>';
+    $("#warn").textContent = "⚠ Template bracket in use — advancement odds are indicative until the official R32 is transcribed.";
 
-  if (ap) {
-    const rows = Object.entries(ap.teams).sort((a,b)=>b[1].champion-a[1].champion).slice(0,20);
-    const tb = document.querySelector("#title tbody");
-    tb.innerHTML =
-      "<tr><th>#</th><th>Team</th><th class=num>Champion</th><th class=num>90% CI</th><th class=num>Final</th><th class=num>QF</th></tr>" +
-      rows.map(([t,d],i) =>
-        `<tr class=team data-team="${t}" tabindex=0 role=button aria-expanded=false>` +
-        `<td class=dim>${i+1}</td><td>${t}</td><td class=num><strong>${pct(d.champion)}</strong></td>` +
-        `<td class="num dim">[${pct(d.champion_ci90[0])}–${pct(d.champion_ci90[1])}]</td>` +
-        `<td class=num>${pct(d.final)}</td><td class=num>${pct(d.qf)}</td></tr>`).join("");
-    tb.addEventListener("click", e => toggleDetail(e, ap));
-    tb.addEventListener("keydown", e => { if (e.key === "Enter") toggleDetail(e, ap); });
-  }
-
-  if (live?.matches?.length) {
-    document.getElementById("live").innerHTML = live.matches.map(m =>
-      `<div class=row><span>${m.home} ${m.home_score}–${m.away_score} ${m.away}</span><span class=dim>${m.status}</span></div>`).join("");
-  }
-
-  const byGroup = {};
-  mp.group_fixtures.forEach(f => (byGroup[f.group] ??= []).push(f));
-  document.getElementById("groups").innerHTML = Object.keys(byGroup).sort().map(g => {
-    const teams = ap ? Object.entries(ap.teams).filter(([,d])=>d.group===g).sort((a,b)=>b[1].r32-a[1].r32) : [];
-    return `<div class=card><strong>Group ${g}</strong>` +
-      teams.map(([t,d]) =>
-        `<div class=row><span>${t}</span><span class=dim>${pct(d.r32)} adv · ${pct(d.third_qualify)} as 3rd</span></div>` +
-        `<div class=bar><div style="width:${100*d.r32}%"></div></div>`).join("") +
-      byGroup[g].map(f =>
-        `<div class=match>${f.home} v ${f.away}<div class=probs>` +
-        `<span class=w title="${f.home} win">${pct(f.probs.win)}</span><span title="draw">${pct(f.probs.draw)}</span>` +
-        `<span class=l title="${f.away} win">${pct(f.probs.loss)}</span></div></div>`).join("") +
-      "</div>";
-  }).join("");
+  if (ap){ renderTrio(ap); renderLeaderboard(ap); renderTable(ap); $("#simbtn").disabled = false; }
+  if (live?.matches?.length)
+    $("#live").innerHTML = live.matches.map(m =>
+      `<div class=row><span>${m.home} <b class=num>${m.home_score}–${m.away_score}</b> ${m.away}</span>
+       <span style="color:var(--t3)">${m.status}</span></div>`).join("");
+  renderGroups(mp, ap);
+  document.querySelectorAll(".lb, .trio, .funnelwrap").forEach(el => io.observe(el));
 })();
 
-function toggleDetail(e, ap) {
-  const tr = e.target.closest("tr.team");
-  if (!tr) return;
-  const open = tr.nextElementSibling?.classList.contains("detail");
-  document.querySelectorAll("tr.detail").forEach(d => d.remove());
-  document.querySelectorAll("tr.team").forEach(r => r.setAttribute("aria-expanded","false"));
+function teamsSorted(ap){ return Object.entries(ap.teams).sort((a,b)=>b[1].champion-a[1].champion); }
+
+function renderTrio(ap){
+  const top = teamsSorted(ap).slice(0,3);
+  $("#trio").innerHTML = top.map(([t,d],i) => `
+    <div class="spot ${i===0?"first":""}">
+      <div class="rank">${["FAVOURITE","CONTENDER","CONTENDER"][i]} · GROUP ${d.group}</div>
+      <div class="team">${t}</div>
+      <div class="big num" data-count="${d.champion}">0%</div>
+      <div class="ci num">90% CI ${fmt1(d.champion_ci90[0])} – ${fmt1(d.champion_ci90[1])}</div>
+    </div>`).join("");
+  io.observe($("#trio"));
+}
+
+function renderLeaderboard(ap){
+  const rows = teamsSorted(ap).slice(0,12);
+  const max = rows[0][1].champion;
+  $("#lb").innerHTML = rows.map(([t,d],i) => `
+    <div class="lbrow ${i===0?"first":""}">
+      <span class="r num">${i+1}</span><span class="t">${t}</span>
+      <div class="track"><div class="fill" style="--w:${100*d.champion/max}%"></div></div>
+      <span class="p num">${fmt1(d.champion)}</span>
+    </div>`).join("");
+  io.observe($("#lb"));
+}
+
+let sortKey = "champion", sortDir = -1;
+function renderTable(ap){
+  const head = `<tr><th>Team</th><th>Grp</th>` +
+    ROUNDS.map(([k,l]) => `<th data-k="${k}" class="${k===sortKey?"sorted":""}">${l}</th>`).join("") + `</tr>`;
+  $("#ft thead").innerHTML = head;
+  const rows = Object.entries(ap.teams).sort((a,b) => sortDir*(a[1][sortKey]-b[1][sortKey]));
+  $("#ft tbody").innerHTML = rows.map(([t,d]) => `
+    <tr data-team="${t}" tabindex="0">
+      <td class="team">${t}</td><td class="grp">${d.group}</td>` +
+      ROUNDS.map(([k]) => `<td class="pc num" style="--p:${100*d[k]}">${fmt(d[k])}</td>`).join("") + `</tr>`).join("");
+  $("#ft thead").onclick = e => {
+    const k = e.target.dataset.k; if (!k) return;
+    sortDir = (k === sortKey) ? -sortDir : -1; sortKey = k; renderTable(ap);
+  };
+  $("#ft tbody").onclick = e => toggleFunnel(e, ap);
+  $("#ft tbody").onkeydown = e => { if (e.key === "Enter") toggleFunnel(e, ap); };
+}
+
+function toggleFunnel(e, ap){
+  const tr = e.target.closest("tr[data-team]"); if (!tr) return;
+  const open = tr.nextElementSibling?.classList.contains("frow");
+  document.querySelectorAll("tr.frow").forEach(x => x.remove());
   if (open) return;
   const d = ap.teams[tr.dataset.team];
-  const det = document.createElement("tr");
-  det.className = "detail";
-  det.innerHTML = `<td colspan=6><div class=rounds aria-label="round-by-round probabilities">` +
-    ROUNDS.map(r => `<div style="height:${Math.max(2,62*d[r])}px" title="${RLBL[r]} ${pct(d[r])}"><span>${RLBL[r]}</span></div>`).join("") +
-    `</div><p class=dim style="margin-top:14px">${tr.dataset.team}: ` +
-    ROUNDS.map(r=>`${RLBL[r]} ${pct(d[r])}`).join(" · ") + `</p></td>`;
+  const det = document.createElement("tr"); det.className = "frow";
+  det.innerHTML = `<td colspan="8"><div class="funnelwrap in"><div class="funnel">` +
+    ROUNDS.map(([k,l]) => `<div class="st"><div class="bar" style="height:${Math.max(3, 64*d[k])}px"></div>
+      <div class="val num">${fmt(d[k])}</div><div class="lbl">${l}</div></div>`).join("") +
+    `</div></div></td>`;
   tr.after(det);
-  tr.setAttribute("aria-expanded","true");
 }
+
+function renderGroups(mp, ap){
+  const byGroup = {};
+  mp.group_fixtures.forEach(f => (byGroup[f.group] ??= []).push(f));
+  $("#gg").innerHTML = Object.keys(byGroup).sort().map(g => {
+    const teams = ap ? Object.entries(ap.teams).filter(([,d]) => d.group === g)
+      .sort((a,b) => b[1].r32 - a[1].r32) : [];
+    return `<div class="gcard"><h3>GROUP ${g}</h3>` +
+      teams.map(([t,d],i) => `
+        <div class="grow ${i < 2 ? "q1" : d.third_qualify > 0.18 ? "q3" : ""}">
+          <span class="nm">${t}</span>
+          <span class="ad num">${fmt(d.r32)} adv</span>
+        </div>`).join("") +
+      `<div class="fx">` + byGroup[g].map(f => {
+        const pw = Math.round(100*f.probs.win), pd = Math.round(100*f.probs.draw),
+              pl = Math.max(0, 100 - pw - pd);
+        return `<div class="fxrow">
+          <div class="fxteams"><span>${f.home}</span><span>${f.away}</span></div>
+          <div class="wdl" title="${f.home} ${pw}% · draw ${pd}% · ${f.away} ${pl}%">
+            <span class="w" style="flex:${pw}">${pw >= 14 ? pw + "%" : ""}</span>
+            <span class="d" style="flex:${pd}">${pd >= 14 ? pd + "%" : ""}</span>
+            <span class="l" style="flex:${pl}">${pl >= 14 ? pl + "%" : ""}</span>
+          </div></div>`;
+      }).join("") + `</div></div>`;
+  }).join("");
+}
+
+/* ---- Simulate one tournament (client-side draw, narrated playback) ---- */
+function sampleGroupStage(mp){
+  const pts = {};
+  const groups = {};
+  for (const f of mp.group_fixtures){
+    (groups[f.group] ??= new Set()).add(f.home); groups[f.group].add(f.away);
+    const u = Math.random();
+    pts[f.home] ??= 0; pts[f.away] ??= 0;
+    if (u < f.probs.win) pts[f.home] += 3;
+    else if (u < f.probs.win + f.probs.draw){ pts[f.home] += 1; pts[f.away] += 1; }
+    else pts[f.away] += 3;
+  }
+  const winners = [], runners = [], thirds = [];
+  for (const g of Object.keys(groups).sort()){
+    const order = [...groups[g]].sort((a,b) => (pts[b]+Math.random()*.5)-(pts[a]+Math.random()*.5));
+    winners.push(order[0]); runners.push(order[1]); thirds.push([order[2], pts[order[2]]]);
+  }
+  thirds.sort((a,b) => (b[1]+Math.random()*.5)-(a[1]+Math.random()*.5));
+  return [...winners, ...runners, ...thirds.slice(0,8).map(x => x[0])];
+}
+function bt(ap, a, b){
+  const sa = Math.max(ap.teams[a].champion, 1e-5) ** .35;
+  const sb = Math.max(ap.teams[b].champion, 1e-5) ** .35;
+  return sa / (sa + sb);
+}
+async function simulateOnce(){
+  const btn = $("#simbtn"), out = $("#simout");
+  btn.disabled = true;
+  const wait = ms => REDUCED ? Promise.resolve() : new Promise(r => setTimeout(r, ms));
+  let field = sampleGroupStage(MP);
+  // shuffle into a bracket
+  for (let i = field.length-1; i > 0; i--){ const j = Math.floor(Math.random()*(i+1)); [field[i],field[j]] = [field[j],field[i]]; }
+  const names = ["Round of 32","Round of 16","Quarter-finals","Semi-finals","Final"];
+  out.innerHTML = `<span class="step">Group stage played — 32 qualify…</span>`;
+  await wait(450);
+  let rnd = 0;
+  while (field.length > 1){
+    const next = [];
+    for (let i = 0; i < field.length; i += 2)
+      next.push(Math.random() < bt(AP, field[i], field[i+1]) ? field[i] : field[i+1]);
+    field = next;
+    out.innerHTML = `<span class="step">${names[rnd] ?? "…"}: ${field.length} remain — ` +
+      (field.length <= 4 ? field.join(", ") : field.slice(0,3).join(", ") + "…") + `</span>`;
+    rnd++; await wait(520);
+  }
+  out.innerHTML = `In this simulation: <span class="champ">🏆 ${field[0]}</span>
+    <span class="step">(model gives them ${fmt1(AP.teams[field[0]].champion)} overall — run it again)</span>`;
+  btn.disabled = false;
+}
+$("#simbtn").addEventListener("click", simulateOnce);
 </script>
 </body>
 </html>
