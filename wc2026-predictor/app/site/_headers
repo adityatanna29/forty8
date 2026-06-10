@@ -1,0 +1,10 @@
+# Cloudflare Pages header rules.
+# JSON artifacts: short edge TTL + stale-while-revalidate so users always get
+# an instant response while the edge refetches in the background.
+/data/*
+  Cache-Control: public, max-age=60, stale-while-revalidate=300
+  Access-Control-Allow-Origin: *
+
+/data/live.json
+  Cache-Control: public, max-age=30, stale-while-revalidate=120
+  Access-Control-Allow-Origin: *

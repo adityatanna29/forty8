@@ -1,0 +1,57 @@
+# Nightly pipeline refresh + deploy (framework v3 §C.1).
+#
+# - cron at 05:17 UTC: after the last North-American kickoff window ends.
+#   (Off-peak minute on purpose: top-of-hour crons get delayed 10-60 min.)
+# - workflow_dispatch: the "match just ended, update NOW" button.
+# - Forecasts are committed to history/<date>/ BEFORE deploy: append-only,
+#   timestamped pre-registration (never retro-edited).
+#
+# Deploy target: Cloudflare Pages via wrangler. Set repo secrets:
+#   CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID
+# and create the Pages project once:  npx wrangler pages project create wc26
+
+name: update-forecasts
+on:
+  schedule:
+    - cron: "17 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install
+        run: pip install -e .
+
+      - name: Download data (martj42 + openfootball)
+        run: python -m wc26.data.download
+
+      - name: Run pipeline + simulation
+        run: |
+          python -m wc26.pipeline --simulate --backtest
+          mkdir -p "history/$(date -u +%F)"
+          cp data/processed/*.json "history/$(date -u +%F)/"
+
+      - name: Commit forecast history (pre-registration)
+        run: |
+          git config user.name "wc26-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add history app/site/data
+          git diff --cached --quiet || git commit -m "forecast $(date -u +%FT%H:%MZ)"
+          git push
+
+      - name: Deploy site to Cloudflare Pages
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx wrangler@4 pages deploy app/site --project-name wc26

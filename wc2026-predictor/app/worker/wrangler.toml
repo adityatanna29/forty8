@@ -1,0 +1,19 @@
+name = "wc26-live-poller"
+main = "live-poller.js"
+compatibility_date = "2026-01-01"
+
+# Poll every 2 minutes during the tournament window (UTC). Tighten/loosen as
+# needed; outside match windows, disable the cron in the dashboard to save quota.
+[triggers]
+crons = ["*/2 * * * *"]
+
+# Create with: npx wrangler kv namespace create LIVE
+# then paste the returned id below.
+[[kv_namespaces]]
+binding = "LIVE"
+id = "REPLACE_WITH_KV_NAMESPACE_ID"
+
+[vars]
+USE_FALLBACK = "0"
+# Set the licensed fallback token with:
+#   npx wrangler secret put FOOTBALL_DATA_TOKEN

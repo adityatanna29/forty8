@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0d1117">
+<title>Methodology — Forty8</title>
+<meta name="description" content="How the Forty8 World Cup 2026 model works: data, ratings, goal model, ensemble, simulation — and its honest limitations.">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<style>
+:root{--bg:#0d1117;--card:#161b22;--text:#e6edf3;--dim:#8b949e;--line:#21262d}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--text);font:15px/1.65 system-ui,sans-serif;padding:24px;max-width:760px;margin:auto}
+header{display:flex;align-items:center;gap:14px;margin-bottom:18px} header img{height:40px}
+a{color:#58a6ff;text-decoration:none} a:hover{text-decoration:underline}
+h1{font-size:22px;margin-bottom:12px} h2{font-size:17px;margin:24px 0 8px}
+p{margin:10px 0} .dim{color:var(--dim)}
+ul{margin:8px 0 8px 22px} li{margin:4px 0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px 16px;margin:14px 0}
+footer{margin-top:36px;padding-top:12px;border-top:1px solid var(--line);font-size:12.5px;color:var(--dim)}
+</style>
+</head>
+<body>
+<header>
+  <a href="index.html"><img src="assets/logo.svg" alt="Forty8 home"></a>
+</header>
+<h1>How Forty8 works</h1>
+<p>Forty8 forecasts the 2026 World Cup with an ensemble of well-published statistical methods,
+recomputed from open data after every matchday. Everything — code, data manifests, and every
+forecast ever published — is open and timestamped before kickoff.</p>
+
+<h2>Data</h2>
+<p>Match history comes from the community-maintained international results dataset (1872–present, CC0);
+the schedule from the public-domain openfootball project. Every input file's SHA256 goes into a manifest,
+so any published probability can be traced back to its exact input bytes.</p>
+
+<h2>Model</h2>
+<ul>
+  <li><strong>Ratings:</strong> Elo with constants fitted on out-of-sample predictive likelihood
+  (not the folk defaults), plus Pi-ratings and a rating-uncertainty term for teams the data knows less about.</li>
+  <li><strong>Goals:</strong> a time-decayed attack/defence Poisson model with the Dixon-Coles
+  low-score correction and shrinkage toward confederation means — this supplies full scoreline
+  distributions, which group tiebreakers need.</li>
+  <li><strong>Market (when odds are supplied):</strong> bookmaker outright odds, de-vigged with
+  Shin's method, averaged on the logit scale, and inverted through tournament simulation into
+  per-team strengths.</li>
+  <li><strong>Ensemble:</strong> the heads are combined in a log-opinion pool with weights fitted on
+  a held-out window, then temperature-calibrated. Calibration is verified with reliability tables,
+  not asserted.</li>
+  <li><strong>Simulation:</strong> 100,000 tournament runs through the real 48-team format:
+  group tiebreakers, ranking of third-placed teams, bracket assignment, extra time, shootouts.
+  Championship odds carry 90% intervals.</li>
+</ul>
+
+<h2>Honest limitations</h2>
+<div class="card">
+<ul>
+  <li>Expected accuracy is ~55% on three-way results — that is the state of the art, and roughly
+  where bookmakers sit. Anyone claiming much more is leaking or cherry-picking.</li>
+  <li>Shootouts are modeled as near coin flips; the evidence for a skill effect is weak.</li>
+  <li>Squad/injury information enters only when squad data is loaded; between updates a late
+  injury is invisible to the model.</li>
+  <li>Group tiebreakers beyond points, goal difference and goals scored (head-to-head subtables,
+  fair play) are approximated by seeded randomness.</li>
+  <li>Backtests are walk-forward (no leakage), but four tournaments is a small sample —
+  uncertainty on the model's own quality is real.</li>
+</ul>
+</div>
+
+<h2>Pre-registration</h2>
+<p>Every forecast set is committed to a public, append-only history before kickoff and never
+edited afterwards. Judge us on the archive, not on highlights.</p>
+
+<h2>Use of these numbers</h2>
+<p><strong>This is not betting advice.</strong> Markets already incorporate most of this information.
+If you choose to gamble, do it responsibly and within your means.</p>
+
+<footer>
+  <p>Open source (MIT). No cookies, no trackers, no ads. Not affiliated with or endorsed by FIFA;
+  tournament names are used only for identification. <a href="index.html">← back to forecasts</a></p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 470 96" role="img" aria-label="Forty8">
+  <!-- lockup: mark tile + custom monoline wordmark (no system fonts) -->
+  <g transform="scale(0.375)">
+    <rect width="256" height="256" rx="56" fill="#0d1117"/>
+    <g fill="none" stroke="#e6edf3" stroke-width="22" stroke-linecap="round">
+      <path d="M104 48 L40 138 L134 138"/>
+      <path d="M104 48 L104 208"/>
+      <circle cx="182" cy="86" r="34"/>
+      <circle cx="182" cy="165" r="43"/>
+    </g>
+    <circle cx="182" cy="165" r="12" fill="#56d364"/>
+  </g>
+  <g transform="translate(112,8)">
+    <g fill="none" stroke="#e6edf3" stroke-width="11" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M14 12 L14 68"/><path d="M14 12 L46 12"/><path d="M14 40 L40 40"/>
+      <circle cx="88" cy="40" r="26"/>
+      <path d="M132 12 L132 68"/><path d="M132 12 L152 12 A15 15 0 0 1 152 42 L132 42"/><path d="M152 42 L172 68"/>
+      <path d="M188 12 L232 12"/><path d="M210 12 L210 68"/>
+      <path d="M248 12 L270 40"/><path d="M292 12 L270 40"/><path d="M270 40 L270 68"/>
+      <circle cx="328" cy="24" r="11"/>
+      <circle cx="328" cy="51" r="14.5"/>
+    </g>
+    <circle cx="328" cy="51" r="5" fill="#56d364"/>
+  </g>
+</svg>

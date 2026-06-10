@@ -1,0 +1,9 @@
+{
+  "_doc": "Confederation per WC-2026 team (canonical names). Used for hierarchical shrinkage in the goal model and for cross-confederation rating offsets.",
+  "UEFA": ["Czechia", "Bosnia and Herzegovina", "Switzerland", "Scotland", "Türkiye", "Germany", "Netherlands", "Sweden", "Belgium", "Spain", "France", "Norway", "Austria", "Portugal", "England", "Croatia"],
+  "CONMEBOL": ["Brazil", "Paraguay", "Ecuador", "Uruguay", "Argentina", "Colombia"],
+  "CONCACAF": ["Mexico", "Canada", "United States", "Haiti", "Curaçao", "Panama"],
+  "AFC": ["South Korea", "Qatar", "Australia", "Japan", "Iran", "Saudi Arabia", "Iraq", "Jordan", "Uzbekistan"],
+  "CAF": ["South Africa", "Morocco", "Ivory Coast", "Tunisia", "Egypt", "Cape Verde", "Senegal", "Algeria", "DR Congo", "Ghana"],
+  "OFC": ["New Zealand"]
+}

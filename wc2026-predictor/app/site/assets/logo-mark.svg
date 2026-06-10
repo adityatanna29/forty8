@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Forty8 mark">
+  <!-- Forty8: custom monoline 48; the 8's lower bowl is the pitch's center
+       circle holding the kickoff spot - the moment before a prediction resolves. -->
+  <rect width="256" height="256" rx="56" fill="#0d1117"/>
+  <g fill="none" stroke="#e6edf3" stroke-width="22" stroke-linecap="round">
+    <path d="M104 48 L40 138 L134 138"/>
+    <path d="M104 48 L104 208"/>
+    <circle cx="182" cy="86" r="34"/>
+    <circle cx="182" cy="165" r="43"/>
+  </g>
+  <circle cx="182" cy="165" r="12" fill="#56d364"/>
+</svg>

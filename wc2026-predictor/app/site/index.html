@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0d1117">
+<title>Forty8 — World Cup 2026 forecasts</title>
+<meta name="description" content="Open, calibrated World Cup 2026 match and title probabilities from 100,000 simulations, updated after every matchday. Open source. Not betting advice.">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<meta property="og:title" content="Forty8 — World Cup 2026 forecasts">
+<meta property="og:description" content="Open, calibrated probabilities from 100,000 simulations, updated after every matchday.">
+<meta property="og:image" content="assets/og-card.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+:root{--bg:#0d1117;--card:#161b22;--text:#e6edf3;--dim:#8b949e;--accent:#3fb950;--bar:#1f6feb;--line:#21262d}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--text);font:15px/1.5 system-ui,sans-serif;padding:24px;max-width:1100px;margin:auto}
+header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:6px}
+header img{height:44px}
+header nav{margin-left:auto;display:flex;gap:16px}
+a{color:#58a6ff;text-decoration:none} a:hover{text-decoration:underline}
+h1{font-size:22px} h2{font-size:17px;margin:26px 0 10px}
+.dim{color:var(--dim);font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;margin-top:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px}
+.row{display:flex;justify-content:space-between;align-items:center;padding:2px 0;font-size:14px}
+.bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin:2px 0 8px}
+.bar>div{height:100%;background:var(--bar)}
+.match{font-size:13px;padding:6px 0;border-top:1px solid var(--line)}
+.probs{display:flex;gap:4px;margin-top:3px}
+.probs span{flex-basis:0;flex-grow:1;text-align:center;background:var(--line);border-radius:3px;padding:1px 0;font-size:12px}
+.probs .w{background:#1f6feb33}.probs .l{background:#f8514933}
+table{width:100%;border-collapse:collapse;font-size:14px}
+td,th{padding:6px 8px;text-align:left;border-bottom:1px solid var(--line)}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+tbody tr.team{cursor:pointer} tbody tr.team:hover{background:#1f242c}
+tr.detail td{background:#10151c}
+.rounds{display:flex;gap:6px;align-items:flex-end;height:64px;padding:6px 0}
+.rounds div{flex:1;background:var(--bar);border-radius:3px 3px 0 0;min-height:2px;position:relative}
+.rounds div:last-child{background:var(--accent)}
+.rounds span{position:absolute;top:100%;left:0;right:0;text-align:center;font-size:10px;color:var(--dim)}
+.warn{color:#d29922;font-size:13px;margin-top:6px}
+footer{margin-top:40px;padding-top:14px;border-top:1px solid var(--line);font-size:12.5px;color:var(--dim)}
+@media(max-width:600px){body{padding:14px}header nav{margin-left:0}}
+</style>
+</head>
+<body>
+<header>
+  <img src="assets/logo.svg" alt="Forty8 — World Cup 2026 forecasts">
+  <nav><a href="about.html">Methodology</a><a href="data/advance_probs_2026.json">Data (JSON)</a></nav>
+</header>
+<p class="dim" id="meta">loading…</p>
+<div id="warn" role="alert"></div>
+
+<h2>Title odds <span class="dim">(click a team for round-by-round path)</span></h2>
+<div class="card"><table id="title" aria-label="Championship probabilities"><tbody></tbody></table></div>
+
+<h2>Live</h2>
+<div class="card" id="live"><span class="dim">No live data yet — appears automatically during match windows.</span></div>
+
+<h2>Groups &amp; match probabilities</h2>
+<div class="grid" id="groups"></div>
+
+<footer>
+  <p><strong>Forty8</strong> is an open-source statistical model. Probabilities are estimates, not promises,
+  and <strong>not betting advice</strong> — if you gamble, the market has already priced most of this in.</p>
+  <p>Match history: martj42 international results (CC0) · schedule: openfootball (public domain) ·
+  methodology &amp; honest limitations: <a href="about.html">about page</a> · code: MIT.
+  This site sets no cookies and runs no trackers.</p>
+  <p>Not affiliated with or endorsed by FIFA. "FIFA" and "FIFA World Cup" are trademarks of their owner;
+  used here only to identify the tournament being forecast.</p>
+</footer>
+
+<script>
+const pct = x => (100 * x).toFixed(1) + "%";
+const ROUNDS = ["r32","r16","qf","sf","final","champion"];
+const RLBL = {r32:"R32",r16:"R16",qf:"QF",sf:"SF",final:"Final",champion:"🏆"};
+
+async function getJSON(p){ try{const r=await fetch(p);return r.ok?r.json():null}catch{return null} }
+
+(async () => {
+  const [mp, ap, live] = await Promise.all([
+    getJSON("data/match_probs_2026.json"),
+    getJSON("data/advance_probs_2026.json"),
+    getJSON("data/live.json"),
+  ]);
+  if (!mp) { document.getElementById("meta").textContent = "Forecast data not generated yet — run the pipeline (see README)."; return; }
+  document.getElementById("meta").textContent =
+    `as of ${mp.as_of}` + (ap ? ` · ${ap.n_sims.toLocaleString()} tournament simulations` : "") +
+    ` · pool [${mp.pool.weights.map(w=>w.toFixed(2)).join(", ")}] · T=${mp.pool.temperature.toFixed(2)}`;
+  if (ap && ap.bracket_is_template)
+    document.getElementById("warn").innerHTML =
+      '<p class="warn">⚠ Bracket template in use — R32 pairings not yet verified against the official FIFA schedule. Advancement odds are indicative.</p>';
+
+  if (ap) {
+    const rows = Object.entries(ap.teams).sort((a,b)=>b[1].champion-a[1].champion).slice(0,20);
+    const tb = document.querySelector("#title tbody");
+    tb.innerHTML =
+      "<tr><th>#</th><th>Team</th><th class=num>Champion</th><th class=num>90% CI</th><th class=num>Final</th><th class=num>QF</th></tr>" +
+      rows.map(([t,d],i) =>
+        `<tr class=team data-team="${t}" tabindex=0 role=button aria-expanded=false>` +
+        `<td class=dim>${i+1}</td><td>${t}</td><td class=num><strong>${pct(d.champion)}</strong></td>` +
+        `<td class="num dim">[${pct(d.champion_ci90[0])}–${pct(d.champion_ci90[1])}]</td>` +
+        `<td class=num>${pct(d.final)}</td><td class=num>${pct(d.qf)}</td></tr>`).join("");
+    tb.addEventListener("click", e => toggleDetail(e, ap));
+    tb.addEventListener("keydown", e => { if (e.key === "Enter") toggleDetail(e, ap); });
+  }
+
+  if (live?.matches?.length) {
+    document.getElementById("live").innerHTML = live.matches.map(m =>
+      `<div class=row><span>${m.home} ${m.home_score}–${m.away_score} ${m.away}</span><span class=dim>${m.status}</span></div>`).join("");
+  }
+
+  const byGroup = {};
+  mp.group_fixtures.forEach(f => (byGroup[f.group] ??= []).push(f));
+  document.getElementById("groups").innerHTML = Object.keys(byGroup).sort().map(g => {
+    const teams = ap ? Object.entries(ap.teams).filter(([,d])=>d.group===g).sort((a,b)=>b[1].r32-a[1].r32) : [];
+    return `<div class=card><strong>Group ${g}</strong>` +
+      teams.map(([t,d]) =>
+        `<div class=row><span>${t}</span><span class=dim>${pct(d.r32)} adv · ${pct(d.third_qualify)} as 3rd</span></div>` +
+        `<div class=bar><div style="width:${100*d.r32}%"></div></div>`).join("") +
+      byGroup[g].map(f =>
+        `<div class=match>${f.home} v ${f.away}<div class=probs>` +
+        `<span class=w title="${f.home} win">${pct(f.probs.win)}</span><span title="draw">${pct(f.probs.draw)}</span>` +
+        `<span class=l title="${f.away} win">${pct(f.probs.loss)}</span></div></div>`).join("") +
+      "</div>";
+  }).join("");
+})();
+
+function toggleDetail(e, ap) {
+  const tr = e.target.closest("tr.team");
+  if (!tr) return;
+  const open = tr.nextElementSibling?.classList.contains("detail");
+  document.querySelectorAll("tr.detail").forEach(d => d.remove());
+  document.querySelectorAll("tr.team").forEach(r => r.setAttribute("aria-expanded","false"));
+  if (open) return;
+  const d = ap.teams[tr.dataset.team];
+  const det = document.createElement("tr");
+  det.className = "detail";
+  det.innerHTML = `<td colspan=6><div class=rounds aria-label="round-by-round probabilities">` +
+    ROUNDS.map(r => `<div style="height:${Math.max(2,62*d[r])}px" title="${RLBL[r]} ${pct(d[r])}"><span>${RLBL[r]}</span></div>`).join("") +
+    `</div><p class=dim style="margin-top:14px">${tr.dataset.team}: ` +
+    ROUNDS.map(r=>`${RLBL[r]} ${pct(d[r])}`).join(" · ") + `</p></td>`;
+  tr.after(det);
+  tr.setAttribute("aria-expanded","true");
+}
+</script>
+</body>
+</html>

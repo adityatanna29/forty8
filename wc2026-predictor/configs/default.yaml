@@ -1,0 +1,51 @@
+# Global configuration. Every run dumps a resolved copy of this file plus the
+# data manifest hash to runs/<timestamp>/ for full reproducibility.
+seed: 26
+
+paths:
+  raw: data/raw
+  static: data/static
+  processed: data/processed
+  runs: runs
+
+elo:
+  initial_rating: 1500.0
+  # K multipliers by match-importance tier. These are STARTING values
+  # (eloratings.net folk constants); ratings.fit re-estimates them by
+  # out-of-sample log-loss. Fitted values are written to processed/elo_params.json.
+  k_by_tier: {wc_finals: 60, continental_finals: 50, qualifier: 40, tournament: 30, friendly: 20}
+  home_advantage: 100.0       # Elo points added to non-neutral home side; refitted
+  margin_exponent: 0.8        # G(d) = (1 + d)^lambda; refitted
+  rtm_weight: 0.85            # between-cycle regression toward 4-year trailing mean
+  fit_start: "1990-01-01"     # matches used when refitting constants
+  eval_start: "2010-01-01"    # out-of-sample window for the fit objective
+
+pi:
+  learning_rate: 0.06         # lambda in Constantinou & Fenton 2013
+  cross_rate: 0.5             # gamma (home<->away cross-update); we use single-rating variant
+  dampening_c: 3.0            # psi(e) = c * log10(1 + e)
+
+poisson:
+  half_life_days: 540         # exponential time-decay half life; tune by RPS
+  max_goals: 10               # scoreline grid truncation
+  dc_rho_init: -0.05
+  l2: 1.0e-3                  # ridge on attack/defence params (sparse-data shrinkage)
+  confed_shrink: 0.5          # shrink team params toward confederation mean
+
+market:
+  devig_method: shin
+
+pool:
+  heads: [ratings, poisson, market]
+  init_weights: [0.34, 0.33, 0.33]
+
+hybrid:
+  num_leaves: 8               # heavily regularized: ~11 tournaments of training data
+  min_data_in_leaf: 40
+  learning_rate: 0.05
+  n_estimators: 200
+  feature_fraction: 0.8
+  early_stopping_rounds: 25
+
+backtest:
+  tournaments: ["2014 WC", "2018 WC", "2022 WC", "2024 Euro"]

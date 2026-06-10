@@ -1,0 +1,44 @@
+{
+  "_doc": "Round-of-32 skeleton for the 48-team format. Slot refs: '1A'=winner of A, '2B'=runner-up of B, 'T1'..'T8'=third-place slots with an allowed-groups pool. r16/qf/sf/final reference winners by match id.",
+  "_template": true,
+  "_verify": "TEMPLATE pairings consistent with the published format shape (8 winner-vs-third, 4 winner-vs-runner, 4 runner-vs-runner). Before publishing real forecasts, replace pairings and third pools with the official FIFA match schedule + Annex C tables (FIFA regulations; Wikipedia: 2026 FIFA World Cup knockout stage). Structural invariants are enforced by tests and by sim/bracket.py validation.",
+  "r32": [
+    {"id": "M01", "home": "1A", "away": "T1", "pool": ["C", "D", "F", "G", "H", "I"]},
+    {"id": "M02", "home": "2A", "away": "2B", "pool": null},
+    {"id": "M03", "home": "1B", "away": "T2", "pool": ["C", "D", "E", "F", "I", "J"]},
+    {"id": "M04", "home": "1C", "away": "2F", "pool": null},
+    {"id": "M05", "home": "1D", "away": "T3", "pool": ["A", "B", "E", "G", "J", "K"]},
+    {"id": "M06", "home": "2D", "away": "2E", "pool": null},
+    {"id": "M07", "home": "1E", "away": "T4", "pool": ["A", "B", "C", "H", "K", "L"]},
+    {"id": "M08", "home": "1F", "away": "2C", "pool": null},
+    {"id": "M09", "home": "1G", "away": "T5", "pool": ["A", "D", "E", "H", "I", "L"]},
+    {"id": "M10", "home": "2G", "away": "2I", "pool": null},
+    {"id": "M11", "home": "1H", "away": "2J", "pool": null},
+    {"id": "M12", "home": "1I", "away": "T6", "pool": ["B", "C", "F", "G", "K", "L"]},
+    {"id": "M13", "home": "1J", "away": "2H", "pool": null},
+    {"id": "M14", "home": "1K", "away": "T7", "pool": ["A", "B", "D", "E", "H", "J"]},
+    {"id": "M15", "home": "1L", "away": "T8", "pool": ["C", "F", "G", "I", "J", "K"]},
+    {"id": "M16", "home": "2K", "away": "2L", "pool": null}
+  ],
+  "r16": [
+    {"id": "M17", "home": "W:M01", "away": "W:M02"},
+    {"id": "M18", "home": "W:M03", "away": "W:M04"},
+    {"id": "M19", "home": "W:M05", "away": "W:M06"},
+    {"id": "M20", "home": "W:M07", "away": "W:M08"},
+    {"id": "M21", "home": "W:M09", "away": "W:M10"},
+    {"id": "M22", "home": "W:M11", "away": "W:M12"},
+    {"id": "M23", "home": "W:M13", "away": "W:M14"},
+    {"id": "M24", "home": "W:M15", "away": "W:M16"}
+  ],
+  "qf": [
+    {"id": "M25", "home": "W:M17", "away": "W:M18"},
+    {"id": "M26", "home": "W:M19", "away": "W:M20"},
+    {"id": "M27", "home": "W:M21", "away": "W:M22"},
+    {"id": "M28", "home": "W:M23", "away": "W:M24"}
+  ],
+  "sf": [
+    {"id": "M29", "home": "W:M25", "away": "W:M26"},
+    {"id": "M30", "home": "W:M27", "away": "W:M28"}
+  ],
+  "final": [{"id": "M32", "home": "W:M29", "away": "W:M30"}]
+}
