@@ -31,7 +31,7 @@ as reference (options dictionary, equivalent SDK calls, API contract); nothing c
 * `AUTO_APPROVE = True` (imports cell) lets the agents' approval gates pass automatically and logs them as auto-approved.
   Set it to `False` to be asked at each gate during a live demo.
 * The model card uses `Qwen/Qwen2.5-7B-Instruct` on the GPU (about 15 GB download on first run). Notebook 02 targets an
-  H100 and uses `openai/gpt-oss-120b` (4-bit MXFP4, about 63 GB, about 65 GB download), falling back to Qwen2.5-32B, then Qwen2.5-7B. Set `LLM_MODEL = None`
+  H100 and uses `openai/gpt-oss-120b` (4-bit MXFP4, about 63 GB, about 65 GB download), falling back to Qwen2.5-32B, then Qwen2.5-7B. Set `LLM_CANDIDATES = []`
   to use the deterministic template writer instead; the notebook also falls back to it if the LLM fails to load.
 * `TABTUNE_DEMO_FAST=1` runs a small smoke test without a GPU.
 
