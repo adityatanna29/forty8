@@ -11,37 +11,50 @@ library-only: time series is not on the platform, so they carry no platform or S
 | `03_enterprise_timeseries_anomaly.ipynb` | Forecasting + anomaly detection | Engineered multi-entity bank ledger (about 1M postings, 32 series) |
 | `04_real_world_cashflow_treasury.ipynb` | Forecasting + anomaly replay | US Daily Treasury Statement (490k rows, 18 lines) |
 
+## How the notebooks read
+
+* **Short visible cells are the calls that matter**: `TabularPipeline(...)`, `fit`, `predict` / `predict_proba`, `evaluate`,
+  `save` / `load`, conformal `calibrate` / `predict_set` / `predict_interval`, `TimeSeriesSchema`, `split_horizon`,
+  `TimeSeriesLeaderboard.run`, `TimeSeriesPipeline.fit / predict / evaluate / calibrate`, the agents and the webhook.
+* **Collapsed cells** (Colab forms, ▸ *Show code*) hold plotting and helper code. Their output still shows.
+
 ## The format (every notebook)
 
 1. **Onboarding** – install TabTune; model dictionary read live from the TabTune registry; Lexsi platform options (01 and 02 only)
 2. **Product options** – problem statement, training and test data, development vs production
-3. **Data preparation** – profile dashboards, a data preparation agent with human approval gates, feature engineering, conclusions
-4. **Model training** – AutoML race, hyperparameter tuning, selection rule, global explainability
+3. **Data preparation** – profile dashboards; a data preparation agent with human approval gates, including a
+   "too good to be true" leakage probe (tabular); feature engineering; conclusions
+4. **Model training** – one model step by step, AutoML race, hyperparameter tuning, selection rule, global explainability
 5. **Model testing** – evaluation dashboards on held-out data, interactive controls
-6. **Batch inference** – score a file, throughput
+6. **Batch inference** – save, reload and score a file
 7. **Model risk** – conformal uncertainty with measured coverage, fairness (tabular), accuracy guards, regulatory evidence map
-8. **Artefacts before production** – model card written by an open-source LLM with trace and a numeric grounding check; API contract with a live round trip
-9. **Model in production** – drift monitoring, retraining agent with human approval, regenerated model card with change log
+8. **Artefacts before production** – model card written from a documented 14-section prompt by a frontier model
+   (Claude Opus 5.5, if an `ANTHROPIC_API_KEY` Colab secret is set) or open weights on the GPU (gpt-oss-120b, then Qwen),
+   with automatic checks (citation keys, number matching, sections, forbidden content) and one revision pass; API contract
+9. **Model in production** – monitoring options (data drift, prediction drift, performance, calibration, data quality,
+   fairness; series drift, band coverage and scheduled review for time series), alert rules with warning and critical
+   levels, a signed **webhook** that receives alerts and queues jobs for the **retraining agent**, champion vs challenger
+   with human approval, regenerated model card with change log
 10. **Conclusions** – plain-English summary generated from the recorded facts, plus the audit trail
 
 ## Running
 
-* Colab: *Runtime → Change runtime type*, then *Run all*. 01 is set up for an A100; 02, 03 and 04 for an H100 (High-RAM).
+* Colab: *Runtime → Change runtime type → A100 or H100, High-RAM*, then *Run all*.
 * 01 and 02 mount Drive and read `MyDrive/datasets/lc/` and `MyDrive/datasets/home-credit-default-risk/processed/`.
   03 generates its data; 04 downloads from the Treasury API (about two minutes, cached).
 * `AUTO_APPROVE = True` (imports cell) lets the agents' approval gates pass automatically and logs them as auto-approved.
   Set it to `False` to be asked at each gate during a live demo.
-* Model-card writer: 01 uses `Qwen/Qwen2.5-7B-Instruct` (about 15 GB download). 02, 03 and 04 use `openai/gpt-oss-120b`
-  (4-bit MXFP4, about 63 GB, about 65 GB download) and fall back to Qwen2.5-32B, then Qwen2.5-7B, skipping any model the GPU cannot hold. Set `LLM_CANDIDATES = []`
-  to use the deterministic template writer instead; the notebook also falls back to it if the LLM fails to load.
+* Model-card writer: `CARD_WRITER = "auto"` uses Claude Opus 5.5 when an `ANTHROPIC_API_KEY` Colab secret exists
+  (only the aggregate fact sheet is sent), otherwise gpt-oss-120b on an 80 GB GPU (about 65 GB download), falling back to
+  Qwen2.5-32B, Qwen2.5-7B, then a deterministic template. Set `CARD_WRITER = "template"` to skip the LLM.
+* The webhook runs inside the notebook on a free local port; in production it would run as a service behind the API gateway.
 * `TABTUNE_DEMO_FAST=1` runs a small smoke test without a GPU.
 
 ## What has and has not been executed
 
-All four notebooks were executed end to end in fast mode on CPU with real TabTune models
-(tabular: OrionMSP, TabICLv2, TabPFN zero-shot, OrionMSP LoRA, `TabularEnsemble`, conformal prediction;
-time series: baselines and the tree forecaster). Not yet executed: the full-size A100 settings, the Chronos
-foundation models inside the new sections of 03 and 04, and the Qwen model-card writer (fast mode uses the template writer).
-Run each notebook once on the A100 before the demo.
+All notebooks were executed end to end in fast mode on CPU with real TabTune models and stand-in data
+(the regression stand-in includes deliberately leaky ratio features, which the data preparation agent removes).
+Not yet executed in this version: the full-size GPU settings on the real data, the Chronos models inside the new
+monitoring sections, and the LLM card writers (fast mode uses the template writer).
 
 `EXTRA_CELLS_sdk_notebooks.md` and `EXTRA_CELL_timeseries_models.md` are earlier add-on cells, kept for reference.
