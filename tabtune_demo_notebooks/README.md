@@ -52,9 +52,11 @@ library-only: time series is not on the platform, so they carry no platform or S
 
 ## What has and has not been executed
 
-All notebooks were executed end to end in fast mode on CPU with real TabTune models and stand-in data
+Notebooks 01, 02 and 03 were executed end to end in fast mode on CPU with real TabTune models and stand-in data
 (the regression stand-in includes deliberately leaky ratio features, which the data preparation agent removes).
 Not yet executed in this version: the full-size GPU settings on the real data, the Chronos models inside the new
 monitoring sections, and the LLM card writers (fast mode uses the template writer).
+
+Notebook 04 has not yet been moved to this version.
 
 `EXTRA_CELLS_sdk_notebooks.md` and `EXTRA_CELL_timeseries_models.md` are earlier add-on cells, kept for reference.
