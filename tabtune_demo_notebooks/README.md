@@ -2,8 +2,8 @@
 
 | Notebook | Stack | Use case |
 |---|---|---|
-| `01_lending_club_classification_sdk.ipynb` | Lexsi SDK `0.1.63` (platform) | Lending Club credit default |
-| `02_home_credit_regression_sdk.ipynb` | Lexsi SDK `0.1.63` (platform) | Home Credit loan amount (`AMT_CREDIT`) |
+| `01_lending_club_classification_sdk.ipynb` | Lexsi SDK `0.1.69` (platform) | Lending Club credit default |
+| `02_home_credit_regression_sdk.ipynb` | Lexsi SDK `0.1.69` (platform) | Home Credit loan amount (`AMT_CREDIT`) |
 | `03_enterprise_timeseries_anomaly.ipynb` | TabTune open source (`tabtune.TimeSeries`) | GCC liquidity forecasting and anomaly detection |
 
 ## Running
