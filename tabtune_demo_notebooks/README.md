@@ -1,7 +1,8 @@
 # TabTune demo notebooks
 
-Four notebooks, all on **TabTune open source**, all in the same ten-section format. The Lexsi platform is shown
-as reference (options dictionary, equivalent SDK calls, API contract); nothing calls the platform backend.
+Four notebooks, all on **TabTune open source**, all in the same ten-section format. In 01 and 02 the Lexsi platform
+is shown as reference text (options dictionary, equivalent calls); nothing calls the platform backend. 03 and 04 are
+library-only: time series is not on the platform, so they carry no platform or SDK references.
 
 | Notebook | Task | Use case |
 |---|---|---|
@@ -12,26 +13,26 @@ as reference (options dictionary, equivalent SDK calls, API contract); nothing c
 
 ## The format (every notebook)
 
-1. **Onboarding** – install TabTune and the Lexsi SDK; model dictionary read live from the TabTune registry; Lexsi platform options
+1. **Onboarding** – install TabTune; model dictionary read live from the TabTune registry; Lexsi platform options (01 and 02 only)
 2. **Product options** – problem statement, training and test data, development vs production
 3. **Data preparation** – profile dashboards, a data preparation agent with human approval gates, feature engineering, conclusions
 4. **Model training** – AutoML race, hyperparameter tuning, selection rule, global explainability
 5. **Model testing** – evaluation dashboards on held-out data, interactive controls
-6. **Batch inference** – score a file, throughput, Lexsi equivalent
+6. **Batch inference** – score a file, throughput
 7. **Model risk** – conformal uncertainty with measured coverage, fairness (tabular), accuracy guards, regulatory evidence map
-8. **Artefacts before production** – model card written by an open-source LLM (Qwen 2.5 7B) with trace and a numeric grounding check; API contract with a live round trip
+8. **Artefacts before production** – model card written by an open-source LLM with trace and a numeric grounding check; API contract with a live round trip
 9. **Model in production** – drift monitoring, retraining agent with human approval, regenerated model card with change log
 10. **Conclusions** – plain-English summary generated from the recorded facts, plus the audit trail
 
 ## Running
 
-* Colab: *Runtime → Change runtime type → A100 GPU, High-RAM*, then *Run all*.
+* Colab: *Runtime → Change runtime type*, then *Run all*. 01 is set up for an A100; 02, 03 and 04 for an H100 (High-RAM).
 * 01 and 02 mount Drive and read `MyDrive/datasets/lc/` and `MyDrive/datasets/home-credit-default-risk/processed/`.
   03 generates its data; 04 downloads from the Treasury API (about two minutes, cached).
 * `AUTO_APPROVE = True` (imports cell) lets the agents' approval gates pass automatically and logs them as auto-approved.
   Set it to `False` to be asked at each gate during a live demo.
-* The model card uses `Qwen/Qwen2.5-7B-Instruct` on the GPU (about 15 GB download on first run). Notebook 02 targets an
-  H100 and uses `openai/gpt-oss-120b` (4-bit MXFP4, about 63 GB, about 65 GB download), falling back to Qwen2.5-32B, then Qwen2.5-7B. Set `LLM_CANDIDATES = []`
+* Model-card writer: 01 uses `Qwen/Qwen2.5-7B-Instruct` (about 15 GB download). 02, 03 and 04 use `openai/gpt-oss-120b`
+  (4-bit MXFP4, about 63 GB, about 65 GB download) and fall back to Qwen2.5-32B, then Qwen2.5-7B, skipping any model the GPU cannot hold. Set `LLM_CANDIDATES = []`
   to use the deterministic template writer instead; the notebook also falls back to it if the LLM fails to load.
 * `TABTUNE_DEMO_FAST=1` runs a small smoke test without a GPU.
 
