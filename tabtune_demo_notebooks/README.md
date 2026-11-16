@@ -1,36 +1,45 @@
 # TabTune demo notebooks
 
-| Notebook | Stack | Use case |
+Four notebooks, all on **TabTune open source**, all in the same ten-section format. The Lexsi platform is shown
+as reference (options dictionary, equivalent SDK calls, API contract); nothing calls the platform backend.
+
+| Notebook | Task | Use case |
 |---|---|---|
-| `01_lending_club_classification_sdk.ipynb` | Lexsi SDK `0.1.69` (platform) | Lending Club credit default |
-| `02_home_credit_regression_sdk.ipynb` | Lexsi SDK `0.1.69` (platform) | Home Credit loan amount (`AMT_CREDIT`) |
-| `03_enterprise_timeseries_anomaly.ipynb` | TabTune open source (`tabtune.TimeSeries`) | Engineered multi-entity bank ledger (about 1M postings): data preparation, feature engineering, liquidity forecasting, anomaly detection |
-| `04_real_world_cashflow_treasury.ipynb` | TabTune open source (`tabtune.TimeSeries`) | Real data: US Daily Treasury Statement (490k rows), label harmonisation, cash-flow forecasting, COVID anomaly replay |
+| `01_lending_club_classification.ipynb` | Classification | Lending Club credit default |
+| `02_home_credit_regression.ipynb` | Regression | Home Credit loan amount (`AMT_CREDIT`) |
+| `03_enterprise_timeseries_anomaly.ipynb` | Forecasting + anomaly detection | Engineered multi-entity bank ledger (about 1M postings, 32 series) |
+| `04_real_world_cashflow_treasury.ipynb` | Forecasting + anomaly replay | US Daily Treasury Statement (490k rows, 18 lines) |
+
+## The format (every notebook)
+
+1. **Onboarding** – install TabTune and the Lexsi SDK; model dictionary read live from the TabTune registry; Lexsi platform options
+2. **Product options** – problem statement, training and test data, development vs production
+3. **Data preparation** – profile dashboards, a data preparation agent with human approval gates, feature engineering, conclusions
+4. **Model training** – AutoML race, hyperparameter tuning, selection rule, global explainability
+5. **Model testing** – evaluation dashboards on held-out data, interactive controls
+6. **Batch inference** – score a file, throughput, Lexsi equivalent
+7. **Model risk** – conformal uncertainty with measured coverage, fairness (tabular), accuracy guards, regulatory evidence map
+8. **Artefacts before production** – model card written by an open-source LLM (Qwen 2.5 7B) with trace and a numeric grounding check; API contract with a live round trip
+9. **Model in production** – drift monitoring, retraining agent with human approval, regenerated model card with change log
+10. **Conclusions** – plain-English summary generated from the recorded facts, plus the audit trail
 
 ## Running
 
-* **01 and 02 (SDK)**: open in Colab, *Run all*. They mount Drive and read the processed files from
-  `MyDrive/datasets/lc/` and `MyDrive/datasets/home-credit-default-risk/processed/`, then prompt for a
-  Lexsi SDK token. Edit only the configuration cell (organization, workspace, project name, roster, flags).
-* **03 and 04 (open source)**: Colab Pro+ with a GPU runtime, *Run all*. `TABTUNE_DEMO_FAST=1` runs it without
-  a GPU using weight-free models.
+* Colab: *Runtime → Change runtime type → A100 GPU, High-RAM*, then *Run all*.
+* 01 and 02 mount Drive and read `MyDrive/datasets/lc/` and `MyDrive/datasets/home-credit-default-risk/processed/`.
+  03 generates its data; 04 downloads from the Treasury API (about two minutes, cached).
+* `AUTO_APPROVE = True` (imports cell) lets the agents' approval gates pass automatically and logs them as auto-approved.
+  Set it to `False` to be asked at each gate during a live demo.
+* The model card uses `Qwen/Qwen2.5-7B-Instruct` on the GPU (about 15 GB download on first run). Set `LLM_MODEL = None`
+  to use the deterministic template writer instead; the notebook also falls back to it if the LLM fails to load.
+* `TABTUNE_DEMO_FAST=1` runs a small smoke test without a GPU.
 
-## What the SDK notebooks rely on (checked against `lexsi-backend-prod_v4` and the SDK source)
+## What has and has not been executed
 
-* Strategies: `simple`, `ensemble`, `distillation`, `leaderboard`; advanced builds accept `tunning_strategy="inference"` only.
-* Every build passes `tags=["Training"]`, `test_tags=["Test"]` and the feature exclusions explicitly; the SDK
-  does not carry the project's exclusions into a build.
-* The backend drops any column with more than 95% unique values; the notebooks round such numeric
-  columns first (pre-flight cell) so continuous features survive.
-* Builds are capped at 10,000 rows (train + test) unless `sample_percentage` is set.
-* Support set: classification only, inference only, models TabICL, OrionMSP, OrionBix, TabPFNv26, Limix,
-  TabPFNv3; it must be enabled on the account plan. The notebooks fall back to SHAP and LIME automatically.
-* Ensembles are explained with LIME (SHAP is not allowed for ensembles). TabPFNv3 needs `tabpfn_token`.
-* Inference output columns: `Predicted_value_AutoML`, `Prediction_category_AutoML`, `pred_proba_AutoML`
-  (class-1 probability). `Prediction_category_AutoML` is overwritten with the true label when the scored
-  tag contains the target, so the notebooks evaluate from `pred_proba_AutoML`.
-* Fairness, cross-validation and the model-performance dashboard are not produced for TFM builds through
-  the API; the classification notebook computes a group check locally.
+All four notebooks were executed end to end in fast mode on CPU with real TabTune models
+(tabular: OrionMSP, TabICLv2, TabPFN zero-shot, OrionMSP LoRA, `TabularEnsemble`, conformal prediction;
+time series: baselines and the tree forecaster). Not yet executed: the full-size A100 settings, the Chronos
+foundation models inside the new sections of 03 and 04, and the Qwen model-card writer (fast mode uses the template writer).
+Run each notebook once on the A100 before the demo.
 
-The SDK notebooks were executed end to end against a test double that mimics these payloads; they have
-not yet been run against the live backend from this environment.
+`EXTRA_CELLS_sdk_notebooks.md` and `EXTRA_CELL_timeseries_models.md` are earlier add-on cells, kept for reference.
