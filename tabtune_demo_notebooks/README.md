@@ -4,14 +4,15 @@
 |---|---|---|
 | `01_lending_club_classification_sdk.ipynb` | Lexsi SDK `0.1.69` (platform) | Lending Club credit default |
 | `02_home_credit_regression_sdk.ipynb` | Lexsi SDK `0.1.69` (platform) | Home Credit loan amount (`AMT_CREDIT`) |
-| `03_enterprise_timeseries_anomaly.ipynb` | TabTune open source (`tabtune.TimeSeries`) | GCC liquidity forecasting and anomaly detection |
+| `03_enterprise_timeseries_anomaly.ipynb` | TabTune open source (`tabtune.TimeSeries`) | Engineered multi-entity bank ledger (about 1M postings): data preparation, feature engineering, liquidity forecasting, anomaly detection |
+| `04_real_world_cashflow_treasury.ipynb` | TabTune open source (`tabtune.TimeSeries`) | Real data: US Daily Treasury Statement (490k rows), label harmonisation, cash-flow forecasting, COVID anomaly replay |
 
 ## Running
 
 * **01 and 02 (SDK)**: open in Colab, *Run all*. They mount Drive and read the processed files from
   `MyDrive/datasets/lc/` and `MyDrive/datasets/home-credit-default-risk/processed/`, then prompt for a
   Lexsi SDK token. Edit only the configuration cell (organization, workspace, project name, roster, flags).
-* **03 (open source)**: Colab Pro+ with a GPU runtime, *Run all*. `TABTUNE_DEMO_FAST=1` runs it without
+* **03 and 04 (open source)**: Colab Pro+ with a GPU runtime, *Run all*. `TABTUNE_DEMO_FAST=1` runs it without
   a GPU using weight-free models.
 
 ## What the SDK notebooks rely on (checked against `lexsi-backend-prod_v4` and the SDK source)
