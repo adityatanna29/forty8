@@ -75,7 +75,7 @@ Same ten sections, with the work done on Lexsi endpoints. Colab needs no GPU: mo
 | Section | What runs on the platform |
 |---|---|
 | 1 Onboarding | `lexsi.login()`, organization → workspace → project; a table mapping every SDK call to its REST endpoint; the LLM gateway (`/gateway/v1/chat/completions`) with a role → (provider, model) table, a side-by-side model comparison, model search and registration |
-| 3 Data preparation | The data-prep agent's checks run in the notebook; each proposal is reviewed by an LLM through the gateway, then a human gate. Upload by tag (`Training`, `Test`, `Prod_M1…M4`), `data_observations`, `data_warnings` |
+| 3 Data preparation | The data-prep agent's checks run in the notebook; each proposal is reviewed by an LLM through the gateway, then a human gate. Upload by tag (`Training`, `Test`, `ProdM1…ProdM4`), `data_observations`, `data_warnings` |
 | 4 Training | `train_model`: zero-shot foundation models, ensemble, leaderboard, distillation; selection from the platform's metrics; global SHAP / LIME from `model_summary` |
 | 5–6 Testing, batch | `model_inference` on the Test tag and on a production tag |
 | 7 Model risk | Conformal coverage and fairness on platform scores; **observations** (`create_observation`) and **policies** (`create_policy`) |
@@ -93,6 +93,8 @@ use their rule defaults and say so.
 `LLM_PROJECT` / `LLM_PROJECT_ID` / `LLM_CLIENT_ID`, `GATEWAY_MODELS`, `ROSTER`. `ALERT_EMAILS` is empty by default, so monitors
 send no e-mail. Add the `LEXSI_API_TOKEN` Colab secret: the gateway is called through the SDK first and through REST with this
 token if the SDK route is not available.
+
+**Tags** may not contain an underscore (the backend rejects them with `#02-110`), so the production months are `ProdM1…ProdM4`.
 
 **Expression rules for observations and policies** (from the SDK's parser): comparison values must be whole words or whole
 numbers (no decimals, no minus sign); the digits of a value must not occur inside its feature name; a feature after `and` / `or`
