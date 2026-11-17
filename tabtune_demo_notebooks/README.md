@@ -105,38 +105,36 @@ engineered features, with probe importance. Both have a filter widget.
 
 ## Platform notebooks (05, 06)
 
-Same ten sections, with the work done on Lexsi endpoints. Colab needs no GPU: models run on platform compute.
+These run on models **already trained** in a Lexsi project; they upload and train nothing. Defaults: workspace `TabTunetesting`,
+project `TabTuneDemoLC` (05: `TabICLv2_v1`, `TabICLv2_distilled_v1`, `OrionMSP_v1`, `OrionBix_v1`, `OrionMoE_v3`) and project
+`TabTuneDemoHCFinal` (06: `XGBoost_v1`, `TabICLv2_v1`, `XRFM_v1`, `TabPFN_distilled_v1`, `TabPFNv26_v1`). Models still running are
+skipped until they finish. Colab needs no GPU.
 
 | Section | What runs on the platform |
 |---|---|
-| 1 Onboarding | `lexsi.login()`, organization → workspace → project; a table mapping every SDK call to its REST endpoint; the LLM gateway (`/gateway/v1/chat/completions`) with a role → (provider, model) table, a side-by-side model comparison, model search and registration |
-| 3 Data preparation | The data-prep agent's checks run in the notebook; each proposal is reviewed by an LLM through the gateway, then a human gate. Upload by tag (`Training`, `Test`, `ProdM1…ProdM4`), `data_observations`, `data_warnings` |
-| 4 Training | `train_model`: zero-shot foundation models, ensemble, leaderboard, distillation; selection from the platform's metrics; global SHAP / LIME from `model_summary` |
-| 5–6 Testing, batch | `model_inference` on the Test tag and on a production tag |
-| 7 Model risk | Conformal coverage and fairness on platform scores; **observations** (`create_observation`) and **policies** (`create_policy`) |
-| 8 Artefacts | Model card through the gateway with the same prompt and automatic checks as 01–03; `case_predict(..., risk_policies=True)` with SHAP, LIME, observations and policies |
-| 9 Production | `get_data_drift_dashboard`, `get_target_drift_dashboard`, `data_drift_diagnosis`, `create_monitor`, `alerts`; alerts go to the signed webhook; the retraining agent (LLM review + human gates) retrains with `train_model`, verifies with `model_inference`, promotes with `activate_model` |
-| 10 Traces | Every LLM call per agent (model, tokens, seconds, decision, rationale), and the gateway's own record: `sessions()` → `messages(session_id)` → `traces(trace_id)` |
+| 1 Onboarding | `lexsi.login()`, the project, the compute types available, an endpoint map (SDK call → REST endpoint), the LLM gateway with a model comparison |
+| 2 Product options | The project's configuration (`config()`: unique identifier, true label) and tags (`tags()`) |
+| 3 Data | `data_observations`, `data_warnings`, `tag_data` on the training tag |
+| 4 Trained models | The registry with every status (read from `v2/ai-models/get_all_models`, because `project.models()` hides inactive models), each model's platform metrics and SHAP / LIME (`model_summary`), the best model, optional `activate_model`, and a data review agent (LLM) |
+| 5 Testing | `model_inference` on the test tag with every model (an inference the project already holds is downloaded instead); dashboards |
+| 6 Batch | The active model scores a production tag |
+| 7 Model risk | Conformal coverage and fairness on platform scores; `create_observation`, `create_policy` |
+| 8 Artefacts | Model card through the gateway; `case_predict(..., serverless_type=, risk_policies=True)` |
+| 9 Production | Drift dashboards, `data_drift_diagnosis`, `create_monitor`, `alerts`; alerts go to a signed webhook; a champion-challenger agent (LLM) compares the project's models on the next unseen month and can switch the active model after a human gate |
+| 10 Traces | Every LLM call per agent, and the gateway's own record: `sessions()` → `messages(session_id)` → `traces(trace_id)` |
 
-**Agents and LLMs.** The data-prep agent, the retraining agent and the model-card writer each call an LLM through the gateway. The
-model is whatever `GATEWAY_MODELS` names for the role; it is preset to the model registered in the gateway project (Claude Sonnet 5.5
-through Open Router). To run the agents on an open-weights model, register one in the project (cell 1.3c) and point the `agents`
-role at it. Deterministic checks compute the evidence and stay in charge of policy-mandated steps; without a gateway the agents
-use their rule defaults and say so.
+**Scoring inactive models.** The platform scores any model whose inference status is on. The notebook switches it on
+(`update_inference_model_status`) and widens the SDK's own client-side check, which only accepts active models, for the call.
 
-**Settings to check before running** (config cell in section 1): `ORGANIZATION`, `WORKSPACE`, `PROJECT`, `COMPUTE`,
-`LLM_PROJECT` / `LLM_PROJECT_ID` / `LLM_CLIENT_ID`, `GATEWAY_MODELS`, `ROSTER`. `ALERT_EMAILS` is empty by default, so monitors
-send no e-mail. Add the `LEXSI_API_TOKEN` Colab secret: the gateway is called through the SDK first and through REST with this
-token if the SDK route is not available.
-
-**Tags** may not contain an underscore (the backend rejects them with `#02-110`), so the production months are `ProdM1…ProdM4`.
+**Settings to check** (config cell): `PROJECT`, `MODELS`, `TRAIN_TAG` / `EVAL_TAG` / `PROD_PREFIX` (or `"auto"`), `INFER_GPU` /
+`INFER_CPU` (batch types for foundation and classic models; section 1 lists what the account offers), `CASE_SERVERLESS`, and the
+gateway settings. `PROMOTE_CHAMPION = False` keeps the active model unchanged in section 4. Tags may not contain underscores.
 
 **Expression rules for observations and policies** (from the SDK's parser): comparison values must be whole words or whole
 numbers (no decimals, no minus sign); the digits of a value must not occur inside its feature name; a feature after `and` / `or`
-must not start with `in`, `notin` or `contains`. The notebooks pick thresholds and features that respect these rules.
+must not start with `in`, `notin` or `contains`.
 
 **What has and has not been executed.** Both notebooks were run end to end against a local stand-in for the SDK and the gateway
-(SDK gateway route, REST route, SDK route failing over to REST, no gateway at all, platform alerts present, promotion and
-no-promotion outcomes). The stand-in uses the real SDK's expression parser and the method signatures of `lexsi-sdk` 0.1.69. They
-have **not** been run against the live Lexsi backend from this environment. Every platform call is wrapped: a call the account
-cannot run prints the platform's message and the notebook carries on.
+(with production tags, with only a training tag, with and without the gateway). The stand-in mirrors the SDK 0.1.69 behaviour the
+notebooks depend on (the registry, the inactive-model check, the expression parser). They have not been run against the live
+Lexsi backend from this environment.
