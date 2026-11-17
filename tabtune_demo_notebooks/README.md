@@ -50,7 +50,7 @@ Six notebooks in the same ten-section format.
   03 generates its data; 04 downloads from the Treasury API (about two minutes, cached).
 * `AUTO_APPROVE = True` (imports cell) lets the agents' approval gates pass automatically and logs them as auto-approved.
   Set it to `False` to be asked at each gate during a live demo.
-* Model-card writer (section 8.1): preset to Claude Sonnet 5.5 through Open Router (`anthropic-claude-sonnet-5.5_v1`,
+* Agents and model-card writer (configured in section 1): preset to Claude Sonnet 5.5 through Open Router (`anthropic-claude-sonnet-5.5_v1`,
   registered in Lexsi project `tabtunedemo_WJQPD747O8`), called through the Lexsi gateway's `/chat/completions` with a
   32,000-token budget and short reasoning. Add a Colab secret `LEXSI_API_TOKEN`. Only the aggregate fact sheet is sent.
   `/text/generation` is available as `LEXSI_ENDPOINT = "text"` for Lexsi-hosted models. Without the token the notebook
@@ -67,6 +67,33 @@ response format; it has not been run against the live gateway from this environm
 version: the full-size GPU settings on the real data and the Chronos models inside the new monitoring sections.
 
 `EXTRA_CELLS_sdk_notebooks.md` and `EXTRA_CELL_timeseries_models.md` are earlier add-on cells, kept for reference.
+
+## LLM agents in 01–04
+
+The agents in 01–04 are LLM agents. Each gets a goal, a set of tools (Python functions that inspect or change the data or the
+model) and the evidence the tools return; the LLM chooses the next tool and explains why, until it calls `finish`.
+
+| Notebook | Agent | Tools | Rules that always hold |
+|---|---|---|---|
+| 01, 02 | Data-prep agent (3.3) | `profile`, `inspect_features`, `find_candidates`, `leakage_probe`, `remove_candidates`, `remove_features`, `restore_features` | data-owner exclusions and constant columns removed; the leakage probe ends below its ceiling |
+| 01, 02 | Retraining agent (9.3) | `read_job`, `retrain_challenger`, `verify_on_next_month`, `promote_challenger` | promotion only after winning on the next unseen month by the margin |
+| 03, 04 | Data readiness agent (3.3) | `readiness_overview`, `series_detail`, `exclude_series`, `interpolate_missing`, `forward_fill_covariates`, `flag_for_data_owner`, `decide_extreme_days` | no series below the minimum history; no missing target or covariate values reach the models |
+| 03, 04 | Retraining agent (9.3) | `read_job`, `run_challengers`, `promote` | promotion only if WQL improves by the margin and MASE stays within tolerance on the next unseen window |
+| all | Model-card writer (8.1) | fact sheet, automatic checks, one revision | every number matches a recorded fact |
+
+* The LLM is the model set in section 1 (`LEXSI_PROVIDER`, `LEXSI_MODEL`; preset to Claude Sonnet 5.5 through Open Router), called
+  through the Lexsi gateway. The gateway settings moved from section 8 to section 1 because the agents need them first.
+* Every action that changes data or models goes through the human approval gate, which shows the agent's reasoning.
+* The rules above are checked after the agent finishes, or inside the tool (promotion), so the LLM cannot skip them.
+* `AGENT_MODE = "rules"` (section 1), or no `LEXSI_API_TOKEN` secret, runs the original rule-based agents. If a gateway call
+  fails mid-task, the rule-based version finishes the job and the notebook says so.
+* `show_agent_trace(...)` after each agent lists every step (reasoning, tool, arguments, result, approval); section 10 adds an
+  agent-activity dashboard (LLM calls, tokens, tools, approvals).
+
+**Feature lists.** 01 and 02 have a section 3.5 listing every candidate feature: kind, model input or removed (by which step and
+with the agent's reason), signal rank, mutual information, correlation with the target, missing values. 03 and 04 list every model
+input after the feature-importance probe: target, series id, covariates known in advance, past-only drivers, static attributes,
+engineered features, with probe importance. Both have a filter widget.
 
 ## Platform notebooks (05, 06)
 
