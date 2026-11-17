@@ -2,7 +2,7 @@
 
 Four notebooks, all on **TabTune open source**, all in the same ten-section format. In 01 and 02 the Lexsi platform
 is shown as reference text (options dictionary, equivalent calls); nothing calls the platform backend. 03 and 04 are
-library-only: time series is not on the platform, so they carry no platform or SDK references.
+library-only: time series is not on the platform, so apart from the LLM gateway used for the model card they carry no platform or SDK references.
 
 | Notebook | Task | Use case |
 |---|---|---|
@@ -28,9 +28,10 @@ library-only: time series is not on the platform, so they carry no platform or S
 5. **Model testing** – evaluation dashboards on held-out data, interactive controls
 6. **Batch inference** – save, reload and score a file
 7. **Model risk** – conformal uncertainty with measured coverage, fairness (tabular), accuracy guards, regulatory evidence map
-8. **Artefacts before production** – model card written from a documented 14-section prompt by a frontier model
-   (Claude Opus 5.5, if an `ANTHROPIC_API_KEY` Colab secret is set) or open weights on the GPU (gpt-oss-120b, then Qwen),
-   with automatic checks (citation keys, number matching, sections, forbidden content) and one revision pass; API contract
+8. **Artefacts before production** – model card written through the **Lexsi LLM gateway**
+   (`/gateway/v1/chat/completions`, any provider registered in the Lexsi project) from a documented prompt: role, citation
+   and number rules, what each of the 14 sections must contain, the fact sheet with a key per fact, and metric notes.
+   Automatic checks (citation keys, number matching, sections, forbidden content) and one revision pass; API contract
 9. **Model in production** – monitoring options (data drift, prediction drift, performance, calibration, data quality,
    fairness; series drift, band coverage and scheduled review for time series), alert rules with warning and critical
    levels, a signed **webhook** that receives alerts and queues jobs for the **retraining agent**, champion vs challenger
@@ -44,19 +45,21 @@ library-only: time series is not on the platform, so they carry no platform or S
   03 generates its data; 04 downloads from the Treasury API (about two minutes, cached).
 * `AUTO_APPROVE = True` (imports cell) lets the agents' approval gates pass automatically and logs them as auto-approved.
   Set it to `False` to be asked at each gate during a live demo.
-* Model-card writer: `CARD_WRITER = "auto"` uses Claude Opus 5.5 when an `ANTHROPIC_API_KEY` Colab secret exists
-  (only the aggregate fact sheet is sent), otherwise gpt-oss-120b on an 80 GB GPU (about 65 GB download), falling back to
-  Qwen2.5-32B, Qwen2.5-7B, then a deterministic template. Set `CARD_WRITER = "template"` to skip the LLM.
+* Model-card writer (section 8.1): add a Colab secret `LEXSI_API_TOKEN`, then set `LEXSI_PROVIDER` (spelled exactly as
+  the gateway expects: `OpenAI`, `Anthropic`, `Gemini`, `Groq`, `Grok`, `Mistral`, `Hugging Face`, `AWS Bedrock`,
+  `Replicate`, `Open Router`, `Together`, `Lexsi`, `Self Hosted`) and `LEXSI_MODEL` (the model name as registered in the
+  Lexsi project). Only the aggregate fact sheet is sent. If the gateway is not configured the notebook falls back to
+  open weights on the GPU (gpt-oss-120b on 80 GB, then Qwen2.5-32B, Qwen2.5-7B) and then to a deterministic template;
+  if a gateway call fails, the error and its likely cause are printed and the template writer is used.
 * The webhook runs inside the notebook on a free local port; in production it would run as a service behind the API gateway.
 * `TABTUNE_DEMO_FAST=1` runs a small smoke test without a GPU.
 
 ## What has and has not been executed
 
-Notebooks 01, 02 and 03 were executed end to end in fast mode on CPU with real TabTune models and stand-in data
+All four notebooks were executed end to end in fast mode on CPU with real TabTune models and stand-in data
 (the regression stand-in includes deliberately leaky ratio features, which the data preparation agent removes).
-Not yet executed in this version: the full-size GPU settings on the real data, the Chronos models inside the new
-monitoring sections, and the LLM card writers (fast mode uses the template writer).
-
-Notebook 04 has not yet been moved to this version.
+The model-card path was run against a local stand-in for the Lexsi gateway that mirrors its request checks and
+response format; it has not been run against the live gateway from this environment. Not yet executed in this
+version: the full-size GPU settings on the real data and the Chronos models inside the new monitoring sections.
 
 `EXTRA_CELLS_sdk_notebooks.md` and `EXTRA_CELL_timeseries_models.md` are earlier add-on cells, kept for reference.
