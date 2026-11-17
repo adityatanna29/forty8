@@ -45,12 +45,11 @@ library-only: time series is not on the platform, so apart from the LLM gateway 
   03 generates its data; 04 downloads from the Treasury API (about two minutes, cached).
 * `AUTO_APPROVE = True` (imports cell) lets the agents' approval gates pass automatically and logs them as auto-approved.
   Set it to `False` to be asked at each gate during a live demo.
-* Model-card writer (section 8.1): add a Colab secret `LEXSI_API_TOKEN`, then set `LEXSI_PROVIDER` (spelled exactly as
-  the gateway expects: `OpenAI`, `Anthropic`, `Gemini`, `Groq`, `Grok`, `Mistral`, `Hugging Face`, `AWS Bedrock`,
-  `Replicate`, `Open Router`, `Together`, `Lexsi`, `Self Hosted`) and `LEXSI_MODEL` (the model name as registered in the
-  Lexsi project). Only the aggregate fact sheet is sent. If the gateway is not configured the notebook falls back to
-  open weights on the GPU (gpt-oss-120b on 80 GB, then Qwen2.5-32B, Qwen2.5-7B) and then to a deterministic template;
-  if a gateway call fails, the error and its likely cause are printed and the template writer is used.
+* Model-card writer (section 8.1): preset to Claude Sonnet 5.5 through Open Router (`anthropic-claude-sonnet-5.5_v1`,
+  registered in Lexsi project `tabtunedemo_WJQPD747O8`), called through the Lexsi gateway's `/chat/completions` with a
+  32,000-token budget and short reasoning. Add a Colab secret `LEXSI_API_TOKEN`. Only the aggregate fact sheet is sent.
+  `/text/generation` is available as `LEXSI_ENDPOINT = "text"` for Lexsi-hosted models. Without the token the notebook
+  falls back to open weights on the GPU, then to a deterministic template.
 * The webhook runs inside the notebook on a free local port; in production it would run as a service behind the API gateway.
 * `TABTUNE_DEMO_FAST=1` runs a small smoke test without a GPU.
 
