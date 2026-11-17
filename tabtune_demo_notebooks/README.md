@@ -51,7 +51,7 @@ Six notebooks in the same ten-section format.
 * `AUTO_APPROVE = True` (imports cell) lets the agents' approval gates pass automatically and logs them as auto-approved.
   Set it to `False` to be asked at each gate during a live demo.
 * Agents and model-card writer (configured in section 1): preset to Claude Sonnet 5.5 through Open Router (`anthropic-claude-sonnet-5.5_v1`,
-  registered in Lexsi project `tabtunedemo_WJQPD747O8`), called through the Lexsi gateway's `/chat/completions` with a
+  registered in Lexsi project `demo_Z1P8OHR7RU`), called through the Lexsi gateway's `/chat/completions` with a
   32,000-token budget and short reasoning. Add a Colab secret `LEXSI_API_TOKEN`. Only the aggregate fact sheet is sent.
   `/text/generation` is available as `LEXSI_ENDPOINT = "text"` for Lexsi-hosted models. Without the token the notebook
   falls back to open weights on the GPU, then to a deterministic template.
