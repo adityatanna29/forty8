@@ -95,6 +95,14 @@ with the agent's reason), signal rank, mutual information, correlation with the 
 input after the feature-importance probe: target, series id, covariates known in advance, past-only drivers, static attributes,
 engineered features, with probe importance. Both have a filter widget.
 
+## Diagrams and plain-English uncertainty (all six)
+
+* Under the title: a diagram of how the notebook works (the ten sections, where the LLM agents, human approvals and rule checks sit).
+* In 7.1: a plain-English explanation of uncertainty for that notebook (prediction sets for default, ranges for loan amounts,
+  calibrated bands for forecasts), a diagram of how it is measured and checked, and after the dashboard an "In this run, in plain
+  English" summary written from the recorded numbers (promised vs measured coverage and what it means for decisions).
+* The diagrams are SVG outputs saved in the notebooks, so they show before the notebook is run.
+
 ## Platform notebooks (05, 06)
 
 Same ten sections, with the work done on Lexsi endpoints. Colab needs no GPU: models run on platform compute.
